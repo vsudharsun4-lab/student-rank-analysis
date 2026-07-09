@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance & Risk - EduRank AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Inline styles removed so pages use the main light theme from `static/styles.css`. -->
+</head>
+<body class="performance-page">
+    <div class="aurora" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+
+    <header class="topbar">
+        <div class="brand">
+            <div class="brand__mark">EA</div>
+            <div>
+                <p class="brand__label">EduRank AI</p>
+                <h1>Performance & Risk</h1>
+            </div>
+        </div>
+        <div class="topbar__meta">
+            <span class="chip" id="liveDate"></span>
+            <span class="chip chip--live">Real-time analysis</span>
+            <span class="chip">{{ user.name }}</span>
+            <a href="{{ url_for('logout') }}" style="color: var(--text-soft); text-decoration: none; margin-left: 1rem;">Logout</a>
+        </div>
+    </header>
+
+    <main class="shell">
+        <a href="{{ url_for('dashboard') }}" class="back-button">← Back to Dashboard</a>
+
+        <div class="panel">
+            <h3>Risk Distribution</h3>
+            <div class="risk-grid" id="riskDistribution">
+                <div class="risk-card high">
+                    <div class="risk-label">🔴 High Risk</div>
+                    <div class="risk-number" id="riskHighNum">-</div>
+                    <div style="font-size: 0.8rem; color: var(--text-soft);">Failing or critical</div>
+                </div>
+                <div class="risk-card medium">
+                    <div class="risk-label">🟡 Medium Risk</div>
+                    <div class="risk-number" id="riskMediumNum">-</div>
+                    <div style="font-size: 0.8rem; color: var(--text-soft);">Below 65 average</div>
+                </div>
+                <div class="risk-card low">
+                    <div class="risk-label">🟢 Low Risk</div>
+                    <div class="risk-number" id="riskLowNum">-</div>
+                    <div style="font-size: 0.8rem; color: var(--text-soft);">On track</div>
+                </div>
+            </div>
+            <div class="distribution-chart">
+                <canvas id="riskDistributionChart"></canvas>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>🌟 Standout Performers</h3>
+            <div class="student-list" id="standoutList"></div>
+            <div class="summary-text" id="standoutSummary"></div>
+        </div>
+
+        <div class="panel">
+            <h3>⚠️ Intervention Candidates</h3>
+            <div class="student-list" id="interventionList"></div>
+            <div class="summary-text" id="interventionSummary"></div>
+        </div>
+
+        <div class="panel">
+            <h3>📌 Near Pass Students (Quick Wins)</h3>
+            <div class="student-list" id="nearPassList"></div>
+            <div class="summary-text" id="nearPassSummary"></div>
+        </div>
+    </main>
+
+    <script>
+        function updateDate() {
+            const options = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
+            document.getElementById('liveDate').textContent = new Date().toLocaleDateString('en-US', options);
+        }
+        updateDate();
+
+        function renderStudentCard(student, type = 'standout') {
+            const riskColor = student.risk.toLowerCase();
+            return `
+                <div class="student-card">
+                    <div class="student-header">
+                        <h4 class="student-name">${student.name}</h4>
+                        <span class="badge ${student.result.toLowerCase()}">${student.result}</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                        <span class="risk-indicator ${riskColor}"></span>
+                        <span style="color: var(--text-soft); font-size: 0.85rem; text-transform: uppercase;">${student.risk} Risk</span>
+                    </div>
+                    <div class="student-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">Average</span>
+                            <span class="stat-value">${student.average}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Rank</span>
+                            <span class="stat-value">#${student.rank}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Grade</span>
+                            <span class="stat-value">${student.grade}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Percentile</span>
+                            <span class="stat-value">${student.percentile}%</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        fetch('/api/analysis')
+            .then(r => r.json())
+            .then(data => {
+                const brief = data.summary || {};
+
+                // Risk Distribution
+                if (brief.risk_breakdown) {
+                    document.getElementById('riskHighNum').textContent = brief.risk_breakdown.High || 0;
+                    document.getElementById('riskMediumNum').textContent = brief.risk_breakdown.Medium || 0;
+                    document.getElementById('riskLowNum').textContent = brief.risk_breakdown.Low || 0;
+
+                    // Risk Chart
+                    const ctx = document.getElementById('riskDistributionChart');
+                    if (ctx) {
+                        new Chart(ctx, {
+                            type: 'doughnut',
+                            data: {
+                                labels: ['High Risk', 'Medium Risk', 'Low Risk'],
+                                datasets: [{
+                                    data: [
+                                        brief.risk_breakdown.High || 0,
+                                        brief.risk_breakdown.Medium || 0,
+                                        brief.risk_breakdown.Low || 0
+                                    ],
+                                    backgroundColor: ['#ff6b6b', '#ffd93d', '#84ffa0'],
+                                    borderColor: '#0f1419',
+                                    borderWidth: 2
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
+                                        labels: { color: '#ccc' }
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }
+
+                // Standout Performers
+                if (brief.standout_performers && brief.standout_performers.length > 0) {
+                    const list = document.getElementById('standoutList');
+                    brief.standout_performers.forEach(s => {
+                        list.innerHTML += renderStudentCard(s, 'standout');
+                    });
+                    document.getElementById('standoutSummary').innerHTML = `
+                        <strong>✓</strong> Top performers are maintaining excellence. Monitor for any decline to ensure sustained performance.
+                    `;
+                }
+
+                // Intervention Candidates
+                if (brief.intervention_candidates && brief.intervention_candidates.length > 0) {
+                    const list = document.getElementById('interventionList');
+                    brief.intervention_candidates.forEach(s => {
+                        list.innerHTML += renderStudentCard(s, 'intervention');
+                    });
+                    document.getElementById('interventionSummary').innerHTML = `
+                        <strong>!</strong> These students need immediate support. Schedule interventions and provide targeted tutoring.
+                    `;
+                }
+
+                // Near Pass Students
+                if (brief.near_pass_students && brief.near_pass_students.length > 0) {
+                    const list = document.getElementById('nearPassList');
+                    brief.near_pass_students.forEach(s => {
+                        list.innerHTML += renderStudentCard(s, 'near-pass');
+                    });
+                    document.getElementById('nearPassSummary').innerHTML = `
+                        <strong>→</strong> These students are close to passing. Focused support can push them over the threshold.
+                    `;
+                }
+            })
+            .catch(e => console.error('Failed to load performance data:', e));
+    </script>
+</body>
+</html>

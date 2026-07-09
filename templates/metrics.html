@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance Metrics - EduRank AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Removed inline styles; using global `static/styles.css` to maintain light theme and consistent alignment. -->
+</head>
+<body class="metrics-page">
+    <div class="aurora" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+
+    <header class="topbar">
+        <div class="brand">
+            <div class="brand__mark">EA</div>
+            <div>
+                <p class="brand__label">EduRank AI</p>
+                <h1>Performance Metrics</h1>
+            </div>
+        </div>
+        <div class="topbar__meta">
+            <span class="chip" id="liveDate"></span>
+            <span class="chip chip--live">Metrics dashboard</span>
+            <span class="chip">{{ user.name }}</span>
+            <a href="{{ url_for('logout') }}" style="color: var(--text-soft); text-decoration: none; margin-left: 1rem;">Logout</a>
+        </div>
+    </header>
+
+    <main class="shell">
+        <a href="{{ url_for('dashboard') }}" class="back-button">← Back to Dashboard</a>
+
+        <div class="two-column">
+            <div class="panel">
+                <h3>🏆 Top 3 Leaderboard</h3>
+                <div class="leaderboard" id="leaderboard"></div>
+            </div>
+
+            <div class="panel">
+                <h3>📊 Grade Distribution</h3>
+                <div class="grade-grid" id="gradeDistribution"></div>
+                <div class="chart-container">
+                    <canvas id="gradeChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="two-column">
+            <div class="panel">
+                <h3>📈 Class Statistics</h3>
+                <div class="metric-box">
+                    <div class="metric-value" id="totalStudents">-</div>
+                    <div class="metric-label">Total Students</div>
+                </div>
+                <div class="metric-box">
+                    <div class="metric-value" id="passCount">-</div>
+                    <div class="metric-label">Passed</div>
+                </div>
+                <div class="metric-box">
+                    <div class="metric-value" id="failCount">-</div>
+                    <div class="metric-label">Failed</div>
+                </div>
+                <div class="metric-box">
+                    <div class="metric-value" id="passPercentage">-</div>
+                    <div class="metric-label">Pass Rate</div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h3>📚 Subject Average Performance</h3>
+                <div class="subject-avg-list" id="subjectAverages"></div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function updateDate() {
+            const options = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
+            document.getElementById('liveDate').textContent = new Date().toLocaleDateString('en-US', options);
+        }
+        updateDate();
+
+        fetch('/api/analysis')
+            .then(r => r.json())
+            .then(data => {
+                const brief = data.summary || {};
+                const intelligence = data.subject_intelligence || {};
+                const students = data.students || [];
+
+                // Top 3 Leaderboard
+                if (students && students.length > 0) {
+                    const sorted = [...students].sort((a, b) => b.Total - a.Total).slice(0, 3);
+                    const lb = document.getElementById('leaderboard');
+                    
+                    sorted.forEach((s, idx) => {
+                        const rankClass = idx === 0 ? 'first' : idx === 1 ? 'second' : 'third';
+                        const icon = idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉';
+                        
+                        const html = `
+                            <div class="leaderboard-item">
+                                <div class="rank ${rankClass}">${icon}</div>
+                                <div class="learner-info">
+                                    <div class="learner-name">${s.Name}</div>
+                                    <div class="learner-details">Grade: <strong>${s.Grade}</strong> | Percentile: <strong>${s.Percentile}%</strong></div>
+                                </div>
+                                <div class="learner-score">
+                                    <div class="score-value">${s.Total}</div>
+                                    <div class="score-label">Total Score</div>
+                                </div>
+                            </div>
+                        `;
+                        lb.innerHTML += html;
+                    });
+
+                    // Class Statistics
+                    const total = students.length;
+                    const passCount = students.filter(s => s.Result === 'Pass').length;
+                    const failCount = total - passCount;
+                    const passPercentage = ((passCount / total) * 100).toFixed(1);
+
+                    document.getElementById('totalStudents').textContent = total;
+                    document.getElementById('passCount').textContent = passCount;
+                    document.getElementById('failCount').textContent = failCount;
+                    document.getElementById('passPercentage').textContent = passPercentage + '%';
+
+                    // Subject Averages
+                    if (intelligence) {
+                        const subjects = Object.entries(intelligence)
+                            .sort((a, b) => b[1].average - a[1].average);
+                        
+                        const subList = document.getElementById('subjectAverages');
+                        subjects.forEach(([subject, data]) => {
+                            const avgPercent = (data.average / 100) * 100;
+                            const html = `
+                                <div class="subject-avg-item">
+                                    <span class="subject-avg-name">${subject}</span>
+                                    <span class="subject-avg-value">${data.average.toFixed(1)}</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: ${avgPercent}%"></div>
+                                </div>
+                            `;
+                            subList.innerHTML += html;
+                        });
+                    }
+                }
+
+                // Grade Distribution
+                if (brief.score_bands) {
+                    const bands = data.score_bands || {
+                        "90_plus": 0,
+                        "80_to_89": 0,
+                        "70_to_79": 0,
+                        "60_to_69": 0,
+                        "below_60": 0
+                    };
+
+                    // Compute from students
+                    if (students && students.length > 0) {
+                        bands["90_plus"] = students.filter(s => s.Average >= 90).length;
+                        bands["80_to_89"] = students.filter(s => s.Average >= 80 && s.Average < 90).length;
+                        bands["70_to_79"] = students.filter(s => s.Average >= 70 && s.Average < 80).length;
+                        bands["60_to_69"] = students.filter(s => s.Average >= 60 && s.Average < 70).length;
+                        bands["below_60"] = students.filter(s => s.Average < 60).length;
+                    }
+
+                    const gradeHtml = `
+                        <div class="grade-card a">
+                            <div class="grade-letter">A</div>
+                            <div class="grade-count">${bands["90_plus"]}</div>
+                            <div class="grade-label">90-100</div>
+                        </div>
+                        <div class="grade-card b">
+                            <div class="grade-letter">B</div>
+                            <div class="grade-count">${bands["80_to_89"]}</div>
+                            <div class="grade-label">80-89</div>
+                        </div>
+                        <div class="grade-card c">
+                            <div class="grade-letter">C</div>
+                            <div class="grade-count">${bands["70_to_79"]}</div>
+                            <div class="grade-label">70-79</div>
+                        </div>
+                        <div class="grade-card d">
+                            <div class="grade-letter">D</div>
+                            <div class="grade-count">${bands["60_to_69"]}</div>
+                            <div class="grade-label">60-69</div>
+                        </div>
+                        <div class="grade-card f">
+                            <div class="grade-letter">F</div>
+                            <div class="grade-count">${bands["below_60"]}</div>
+                            <div class="grade-label">Below 60</div>
+                        </div>
+                    `;
+                    document.getElementById('gradeDistribution').innerHTML = gradeHtml;
+
+                    // Grade Bar Chart
+                    const ctx = document.getElementById('gradeChart');
+                    if (ctx) {
+                        new Chart(ctx, {
+                            type: 'bar',
+                            data: {
+                                labels: ['A (90+)', 'B (80-89)', 'C (70-79)', 'D (60-69)', 'F (<60)'],
+                                datasets: [{
+                                    label: 'Students',
+                                    data: [
+                                        bands["90_plus"],
+                                        bands["80_to_89"],
+                                        bands["70_to_79"],
+                                        bands["60_to_69"],
+                                        bands["below_60"]
+                                    ],
+                                    backgroundColor: ['#84ffa0', '#00d9ff', '#ffd93d', '#ff9a56', '#ff6b6b'],
+                                    borderRadius: 4,
+                                    borderSkipped: false
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { display: false }
+                                },
+                                scales: {
+                                    y: {
+                                        beginAtZero: true,
+                                        ticks: { color: '#ccc' },
+                                        grid: { color: 'rgba(255,255,255,0.05)' }
+                                    },
+                                    x: {
+                                        ticks: { color: '#ccc' },
+                                        grid: { display: false }
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }
+            })
+            .catch(e => console.error('Failed to load metrics:', e));
+    </script>
+</body>
+</html>

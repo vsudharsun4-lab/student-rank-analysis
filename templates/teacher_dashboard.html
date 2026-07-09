@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard - EduRank AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script defer src="{{ url_for('static', filename='teacher_dashboard.js') }}"></script>
+</head>
+<body class="teacher-page">
+    <div class="aurora" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+
+    <header class="topbar">
+        <div class="brand">
+            <div class="brand__mark">EA</div>
+            <div>
+                <p class="brand__label">EduRank AI</p>
+                <h1>Teacher Dashboard</h1>
+            </div>
+        </div>
+        <div class="topbar__meta">
+            <span class="chip" id="liveDate"></span>
+            <span class="chip chip--live">Marks upload</span>
+            <span class="chip">{{ user.name }}</span>
+            <a href="{{ url_for('logout') }}" style="color: var(--text-soft); text-decoration: none; margin-left: 1rem;">Logout</a>
+        </div>
+    </header>
+
+    <main class="shell">
+        <a href="{{ url_for('dashboard') }}" class="back-button">← Back to Dashboard</a>
+
+        <section class="panel panel--wide panel--gradient">
+            <div class="panel__header">
+                <h3>Upload Student Marks</h3>
+            </div>
+            <p class="teacher-subtitle">Upload a CSV file to replace the current marks dataset. Subject names and the number of subjects are fully flexible, and a backup is created automatically before saving.</p>
+
+            <div class="teacher-grid">
+                <div class="teacher-card">
+                    <h4>Expected CSV Format</h4>
+                    <p class="teacher-helper">Your file must include <strong>Name</strong> (or <strong>student</strong>/<strong>student_name</strong>) and subject columns with marks between 0 and 100. You can use any subject names and any number of subjects (including 6+).</p>
+                    <div id="schemaColumns" class="schema-columns"></div>
+                    <div id="schemaInfo" class="schema-info"></div>
+                    <div class="template-builder">
+                        <label for="templateSubjectCount" class="template-label">Template subject count</label>
+                        <input id="templateSubjectCount" type="number" min="1" max="20" value="6">
+                        <a id="downloadTemplateBtn" class="chip teacher-link" href="{{ url_for('teacher_template', subject_count=6) }}">Download flexible template</a>
+                    </div>
+                </div>
+
+                <div class="teacher-card">
+                    <h4>Choose File</h4>
+                    <form id="marksUploadForm" class="upload-form">
+                        <input id="marksFile" name="marks_file" type="file" accept=".csv" required>
+                        <button type="submit" id="uploadBtn" class="submit-btn">Upload Marks</button>
+                    </form>
+                    <p class="teacher-helper">After upload, analytics pages will use the new marks immediately.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel panel--wide">
+            <div class="panel__header">
+                <h3>Upload Status</h3>
+            </div>
+            <div id="uploadMessage" class="upload-message upload-message--neutral">No upload yet. Select a CSV file and upload.</div>
+            <div id="uploadMeta" class="upload-meta"></div>
+        </section>
+
+        <section class="panel panel--wide">
+            <div class="panel__header">
+                <h3>Preview</h3>
+            </div>
+            <div id="previewContainer" class="preview-container">
+                <p class="teacher-helper">Uploaded rows preview will appear here.</p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

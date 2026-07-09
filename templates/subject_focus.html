@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subject Focus - EduRank AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Inline dark styles removed. Main `static/styles.css` handles panels, cards and progress bars for a light theme. -->
+</head>
+<body class="subject-focus-page">
+    <div class="aurora" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+
+    <header class="topbar">
+        <div class="brand">
+            <div class="brand__mark">EA</div>
+            <div>
+                <p class="brand__label">EduRank AI</p>
+                <h1>Subject Focus</h1>
+            </div>
+        </div>
+        <div class="topbar__meta">
+            <span class="chip" id="liveDate"></span>
+            <span class="chip chip--live">Subject analysis</span>
+            <span class="chip">{{ user.name }}</span>
+            <a href="{{ url_for('logout') }}" style="color: var(--text-soft); text-decoration: none; margin-left: 1rem;">Logout</a>
+        </div>
+    </header>
+
+    <main class="shell">
+        <a href="{{ url_for('dashboard') }}" class="back-button">← Back to Dashboard</a>
+
+        <div class="two-column">
+            <div class="panel">
+                <h3>Subject Performance Rankings</h3>
+                <div class="subject-list" id="subjectList">
+                    {% if summary.subject_focus %}
+                        {% for s in summary.subject_focus %}
+                            {% set subj = subject_intelligence.get(s.subject, {}) %}
+                            <div class="subject-item {{ 'weak' if s.priority == 'High' else '' }}">
+                                <div style="display: flex; justify-content: space-between; align-items: start;">
+                                    <div>
+                                        <h4 class="subject-name">{{ s.subject }}</h4>
+                                        <span class="priority-badge {{ s.priority.lower() }}">{{ s.priority }} Priority</span>
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <div style="font-size: 1.8rem; font-weight: 700; color: #84ffa0;">{{ s.average }}</div>
+                                        <div style="font-size: 0.8rem; color: var(--text-soft);">Avg Score</div>
+                                    </div>
+                                </div>
+                                <div class="subject-stats">
+                                    <div class="stat">
+                                        <span class="stat-label">Highest</span>
+                                        <span class="stat-value">{{ subj.highest or '-' }}</span>
+                                    </div>
+                                    <div class="stat">
+                                        <span class="stat-label">Lowest</span>
+                                        <span class="stat-value">{{ subj.lowest or '-' }}</span>
+                                    </div>
+                                    <div class="stat">
+                                        <span class="stat-label">Variance</span>
+                                        <span class="stat-value">{% if subj.variance is defined %}{{ '%.1f'|format(subj.variance) }}{% else %}-{% endif %}</span>
+                                    </div>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: {{ (s.average / 100) * 100 }}%"></div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="panel">
+                <h3>Subject Performance Chart</h3>
+                <div class="chart-container">
+                    <canvas id="subjectChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>📋 Recommended Actions by Subject</h3>
+            <div class="recommendations-grid" id="recommendationsList">
+                {% if summary.subject_focus %}
+                    {% for s in summary.subject_focus %}
+                        {% set isWeak = (s.priority == 'High') %}
+                        {% if isWeak %}
+                            {% set recommendations = [
+                                'Increase practice sessions from 1-2 to 3-4 per week',
+                                'Arrange peer tutoring with top performers',
+                                'Break down complex concepts into smaller modules',
+                                'Provide additional resources and practice problems',
+                                'Schedule one-on-one teacher sessions'
+                            ] %}
+                        {% else %}
+                            {% set recommendations = [
+                                'Maintain current study schedule',
+                                'Encourage advanced topics exploration',
+                                'Consider peer mentoring roles',
+                                'Work on application-based problems',
+                                'Monitor for consistency'
+                            ] %}
+                        {% endif %}
+
+                        <div class="recommendation-card">
+                            <h4 class="rec-title">📚 {{ s.subject }}</h4>
+                            <div class="rec-content">
+                                <strong>Current: {{ s.average }}/100 ({{ s.priority }})</strong>
+                                <ul>
+                                    {% for r in recommendations %}
+                                        <li>{{ r }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            function updateDate() {
+                const options = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
+                document.getElementById('liveDate').textContent = new Date().toLocaleDateString('en-US', options);
+            }
+
+            function renderChart(labels, values) {
+                const ctx = document.getElementById('subjectChart');
+                if (!ctx || typeof Chart === 'undefined') {
+                    return;
+                }
+
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Average Score',
+                            data: values,
+                            backgroundColor: values.map(avg => avg >= 80 ? '#84ffa0' : avg >= 65 ? '#ffd93d' : '#ff6b6b'),
+                            borderRadius: 4,
+                            borderSkipped: false
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, max: 100 },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+            }
+
+            updateDate();
+
+            const initialSubjects = {{ summary.subject_focus | default([]) | map(attribute='subject') | list | tojson }};
+            const initialAverages = {{ summary.subject_focus | default([]) | map(attribute='average') | list | tojson }};
+
+            if (initialSubjects.length && initialAverages.length) {
+                renderChart(initialSubjects, initialAverages);
+            }
+
+            fetch('/api/analysis')
+                .then(r => { if (!r.ok) throw new Error('Failed to fetch analysis'); return r.json(); })
+                .then(data => {
+                    const brief = data.summary || {};
+                    const intelligence = data.subject_intelligence || {};
+
+                    if (brief.subject_focus && brief.subject_focus.length > 0) {
+                        const list = document.getElementById('subjectList');
+                        const recList = document.getElementById('recommendationsList');
+                        const chartLabels = [];
+                        const chartValues = [];
+
+                        const sorted = [...brief.subject_focus].sort((a, b) => b.average - a.average);
+
+                        if (list && list.children.length === 0) {
+                            sorted.forEach(s => {
+                                chartLabels.push(s.subject);
+                                chartValues.push(s.average);
+
+                                const subjectInt = intelligence[s.subject] || {};
+                                const isWeak = s.priority === 'High';
+                                const div = document.createElement('div');
+                                div.className = 'subject-item ' + (isWeak ? 'weak' : '');
+                                div.innerHTML = `
+                                    <div style="display:flex;justify-content:space-between;align-items:start;">
+                                        <div>
+                                            <h4 class="subject-name">${s.subject}</h4>
+                                            <span class="priority-badge ${s.priority.toLowerCase()}">${s.priority} Priority</span>
+                                        </div>
+                                        <div style="text-align:right;">
+                                            <div style="font-size:1.8rem;font-weight:700;color:#84ffa0;">${s.average}</div>
+                                            <div style="font-size:0.8rem;color:var(--text-soft);">Avg Score</div>
+                                        </div>
+                                    </div>
+                                    <div class="subject-stats">
+                                        <div class="stat"><span class="stat-label">Highest</span><span class="stat-value">${subjectInt.highest||'-'}</span></div>
+                                        <div class="stat"><span class="stat-label">Lowest</span><span class="stat-value">${subjectInt.lowest||'-'}</span></div>
+                                        <div class="stat"><span class="stat-label">Variance</span><span class="stat-value">${subjectInt.variance?subjectInt.variance.toFixed(1):'-'}</span></div>
+                                    </div>
+                                    <div class="progress-bar"><div class="progress-fill" style="width:${(s.average/100)*100}%"></div></div>
+                                `;
+                                list.appendChild(div);
+                            });
+
+                            if (!initialSubjects.length || !initialAverages.length) {
+                                renderChart(chartLabels, chartValues);
+                            }
+                        }
+
+                        if (recList && recList.children.length === 0) {
+                            const sortedRec = [...brief.subject_focus].sort((a, b) => a.priority === 'High' ? -1 : 1);
+                            sortedRec.forEach(s => {
+                                const isWeak = s.priority === 'High';
+                                const recs = isWeak ? [
+                                    'Increase practice sessions from 1-2 to 3-4 per week',
+                                    'Arrange peer tutoring with top performers',
+                                    'Break down complex concepts into smaller modules',
+                                    'Provide additional resources and practice problems',
+                                    'Schedule one-on-one teacher sessions'
+                                ] : [
+                                    'Maintain current study schedule',
+                                    'Encourage advanced topics exploration',
+                                    'Consider peer mentoring roles',
+                                    'Work on application-based problems',
+                                    'Monitor for consistency'
+                                ];
+                                const card = document.createElement('div');
+                                card.className = 'recommendation-card';
+                                card.innerHTML = `<h4 class="rec-title">📚 ${s.subject}</h4><div class="rec-content"><strong>Current: ${s.average}/100 (${s.priority})</strong><ul>${recs.map(r => '<li>' + r + '</li>').join('')}</ul></div>`;
+                                recList.appendChild(card);
+                            });
+                        }
+                    }
+                })
+                .catch(e => console.error('Failed to load subject focus:', e));
+        });
+    </script>
+</body>
+</html>

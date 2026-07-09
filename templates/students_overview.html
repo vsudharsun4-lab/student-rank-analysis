@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Students Overview - EduRank AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <!-- Removed inline dark styles; using global `static/styles.css` for consistent light theme styling. -->
+</head>
+<body class="students-overview-page">
+    <div class="aurora" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+
+    <header class="topbar">
+        <div class="brand">
+            <div class="brand__mark">EA</div>
+            <div>
+                <p class="brand__label">EduRank AI</p>
+                <h1>Students Overview</h1>
+            </div>
+        </div>
+        <div class="topbar__meta">
+            <span class="chip" id="liveDate"></span>
+            <span class="chip chip--live">Complete listing</span>
+            <span class="chip">{{ user.name }}</span>
+            <a href="{{ url_for('logout') }}" style="color: var(--text-soft); text-decoration: none; margin-left: 1rem;">Logout</a>
+        </div>
+    </header>
+
+    <main class="shell">
+        <a href="{{ url_for('dashboard') }}" class="back-button">← Back to Dashboard</a>
+
+        <div class="panel">
+            <h3>📊 Class Statistics</h3>
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-label">Total Students</div>
+                    <div class="stat-value" id="totalStat">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Passed</div>
+                    <div class="stat-value" id="passStat">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Failed</div>
+                    <div class="stat-value" id="failStat">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Pass Rate</div>
+                    <div class="stat-value" id="passRateStat">-</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>👥 All Students</h3>
+            
+            <div class="search-box">
+                <input type="text" id="searchInput" class="search-input" placeholder="Search by name...">
+            </div>
+
+            <div class="filter-bar">
+                <button class="filter-btn active" data-filter="all">All Students</button>
+                <button class="filter-btn" data-filter="pass">Passed</button>
+                <button class="filter-btn" data-filter="fail">Failed</button>
+                <button class="filter-btn" data-filter="high-risk">High Risk</button>
+                <button class="filter-btn" data-filter="medium-risk">Medium Risk</button>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Name</th>
+                            <th>Average</th>
+                            <th>Grade</th>
+                            <th>Result</th>
+                            <th>Risk Level</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentsTable">
+                        <tr>
+                            <td colspan="7" style="text-align: center; color: var(--text-soft);">Loading students...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>⚠️ Recommended Interventions</h3>
+            <div id="interventionsList" style="display: flex; flex-direction: column; gap: 1rem;"></div>
+        </div>
+    </main>
+
+    <div class="intervention-modal" id="interventionModal" aria-hidden="true">
+        <div class="intervention-modal__backdrop" onclick="closeInterventionModal()"></div>
+        <div class="intervention-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="interventionModalTitle">
+            <div class="intervention-modal__header">
+                <div>
+                    <p class="intervention-modal__eyebrow">Intervention planner</p>
+                    <h3 id="interventionModalTitle">Schedule Intervention</h3>
+                </div>
+                <button type="button" class="intervention-modal__close" onclick="closeInterventionModal()" aria-label="Close modal">×</button>
+            </div>
+
+            <p class="intervention-modal__lead" id="interventionModalLead"></p>
+
+            <form id="interventionForm">
+                <div class="modal-grid">
+                    <label class="modal-field">
+                        <span>Date</span>
+                        <input type="date" id="interventionDate" required>
+                    </label>
+                    <label class="modal-field">
+                        <span>Support Type</span>
+                        <select id="interventionType" required>
+                            <option>Tutoring session</option>
+                            <option>One-on-one coaching</option>
+                            <option>Practice review</option>
+                            <option>Parent meeting</option>
+                        </select>
+                    </label>
+                </div>
+
+                <label class="modal-field modal-field--full">
+                    <span>Notes</span>
+                    <textarea id="interventionNotes" rows="4" placeholder="Add focus areas, goals, or follow-up notes"></textarea>
+                </label>
+
+                <div class="modal-feedback" id="interventionFeedback" aria-live="polite"></div>
+
+                <div class="modal-actions">
+                    <button type="button" class="modal-button modal-button--ghost" onclick="closeInterventionModal()">Cancel</button>
+                    <button type="submit" class="modal-button modal-button--primary">Save Schedule</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let allStudents = [];
+        let currentFilter = 'all';
+
+        function updateDate() {
+            const options = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
+            document.getElementById('liveDate').textContent = new Date().toLocaleDateString('en-US', options);
+        }
+        updateDate();
+
+        function formatRisk(risk) {
+            return risk.charAt(0).toUpperCase() + risk.slice(1);
+        }
+
+        function renderTable() {
+            const table = document.getElementById('studentsTable');
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            let filtered = allStudents.filter(s => {
+                const matchesSearch = s.Name.toLowerCase().includes(searchTerm);
+                if (!matchesSearch) return false;
+
+                if (currentFilter === 'all') return true;
+                if (currentFilter === 'pass') return s.Result === 'Pass';
+                if (currentFilter === 'fail') return s.Result === 'Fail';
+                if (currentFilter === 'high-risk') return s.RiskLevel === 'High';
+                if (currentFilter === 'medium-risk') return s.RiskLevel === 'Medium';
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                table.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-soft);">No students found</td></tr>';
+                return;
+            }
+
+            table.innerHTML = filtered.map(s => `
+                <tr>
+                    <td class="rank-cell">#${s.Rank}</td>
+                    <td class="name-cell">${s.Name}</td>
+                    <td><strong>${s.Average.toFixed(1)}</strong></td>
+                    <td><span class="badge ${s.Grade.toLowerCase()}">${s.Grade}</span></td>
+                    <td><span class="badge ${s.Result.toLowerCase()}">${s.Result}</span></td>
+                    <td>
+                        <span class="risk-indicator ${s.RiskLevel.toLowerCase()}"></span>
+                        ${formatRisk(s.RiskLevel)}
+                    </td>
+                    <td>
+                        <div class="action-cell">
+                            <button class="action-btn" onclick='viewProfile(${JSON.stringify(s.Name)})'>View</button>
+                            ${(s.Result === 'Fail' || s.RiskLevel === 'High') ? `<button class="action-btn" onclick='scheduleIntervention(${JSON.stringify(s.Name)})' style="background: rgba(255, 107, 107, 0.1); border-color: rgba(255, 107, 107, 0.3); color: #ff6b6b;">Intervene</button>` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function viewProfile(name) {
+            window.location.href = `/student/${encodeURIComponent(name)}`;
+        }
+
+        const interventionModal = document.getElementById('interventionModal');
+        const interventionForm = document.getElementById('interventionForm');
+        const interventionModalLead = document.getElementById('interventionModalLead');
+        const interventionDate = document.getElementById('interventionDate');
+        const interventionType = document.getElementById('interventionType');
+        const interventionNotes = document.getElementById('interventionNotes');
+        const interventionFeedback = document.getElementById('interventionFeedback');
+        let activeInterventionStudent = '';
+
+        function toDateInputValue(date) {
+            const localDate = new Date(date.getTime() - (date.getTimezoneOffset() * 60000));
+            return localDate.toISOString().slice(0, 10);
+        }
+
+        function openInterventionModal(name) {
+            activeInterventionStudent = name;
+            interventionModalLead.textContent = `Create a follow-up plan for ${name}.`;
+            interventionDate.value = toDateInputValue(new Date(Date.now() + 86400000));
+            interventionType.value = 'Tutoring session';
+            interventionNotes.value = '';
+            interventionFeedback.textContent = '';
+            interventionFeedback.className = 'modal-feedback';
+            interventionModal.classList.add('is-open');
+            interventionModal.setAttribute('aria-hidden', 'false');
+            window.setTimeout(() => interventionDate.focus(), 0);
+        }
+
+        function scheduleIntervention(name) {
+            openInterventionModal(name);
+        }
+
+        function closeInterventionModal() {
+            interventionModal.classList.remove('is-open');
+            interventionModal.setAttribute('aria-hidden', 'true');
+        }
+
+        interventionModal.addEventListener('click', (event) => {
+            if (event.target.classList.contains('intervention-modal__backdrop')) {
+                closeInterventionModal();
+            }
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && interventionModal.classList.contains('is-open')) {
+                closeInterventionModal();
+            }
+        });
+
+        interventionForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+
+            const date = interventionDate.value;
+            const supportType = interventionType.value;
+            const notes = interventionNotes.value.trim();
+
+            interventionFeedback.textContent = `Scheduled ${supportType.toLowerCase()} for ${activeInterventionStudent} on ${date}.`;
+            if (notes) {
+                interventionFeedback.textContent += ` Notes saved.`;
+            }
+            interventionFeedback.className = 'modal-feedback modal-feedback--success';
+
+            window.setTimeout(() => {
+                closeInterventionModal();
+            }, 1200);
+        });
+
+        // Filter buttons
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                currentFilter = e.target.dataset.filter;
+                renderTable();
+            });
+        });
+
+        // Search
+        document.getElementById('searchInput').addEventListener('input', renderTable);
+
+        // Load data
+        fetch('/api/analysis')
+            .then(r => r.json())
+            .then(data => {
+                allStudents = data.students || [];
+
+                // Stats
+                const total = allStudents.length;
+                const passed = allStudents.filter(s => s.Result === 'Pass').length;
+                const failed = total - passed;
+                const passRate = ((passed / total) * 100).toFixed(1);
+
+                document.getElementById('totalStat').textContent = total;
+                document.getElementById('passStat').textContent = passed;
+                document.getElementById('failStat').textContent = failed;
+                document.getElementById('passRateStat').textContent = passRate + '%';
+
+                renderTable();
+
+                // Interventions
+                const interventions = allStudents.filter(s => s.Result === 'Fail' || s.RiskLevel === 'High');
+                const intList = document.getElementById('interventionsList');
+                
+                if (interventions.length === 0) {
+                    intList.innerHTML = '<div style="color: var(--text-soft); padding: 1rem; text-align: center;">No interventions needed at this time</div>';
+                } else {
+                    intList.innerHTML = interventions.map(s => `
+                        <div class="intervention-card">
+                            <div class="intervention-header">
+                                <div>
+                                    <div class="intervention-student">${s.Name}</div>
+                                    <div class="intervention-avg">Avg: ${s.Average.toFixed(1)} | Status: <span class="intervention-status">${s.Result === 'Fail' ? 'Failing' : 'High Risk'}</span></div>
+                                </div>
+                                <button class="schedule-btn" onclick='scheduleIntervention(${JSON.stringify(s.Name)})'>Schedule Now</button>
+                            </div>
+                            <div class="intervention-rec">
+                                <strong>Recommendation:</strong> ${s.Result === 'Fail' ? 'Immediate tutoring and one-on-one sessions required' : 'Enhanced monitoring and additional practice sessions'}
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            })
+            .catch(e => {
+
+                console.error('Failed to load students:', e);
+                document.getElementById('studentsTable').innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-soft);">Error loading students</td></tr>';
+            });
+    </script>
+</body>
+</html>

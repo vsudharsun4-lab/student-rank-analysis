@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Hub - EduRank AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <!-- Styles removed to prefer the project's main `static/styles.css` (light theme).
+         Card and stat styles are provided in `static/styles.css` to keep consistent theming. -->
+</head>
+<body>
+    <div class="aurora" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+
+    <header class="topbar">
+        <div class="brand">
+            <div class="brand__mark">EA</div>
+            <div>
+                <p class="brand__label">EduRank AI</p>
+                <h1>Dashboard Hub</h1>
+            </div>
+        </div>
+        <div class="topbar__meta">
+            <span class="chip" id="liveDate"></span>
+            <span class="chip chip--live">Live analytics</span>
+            <span class="chip">{{ user.name }}</span>
+            <a href="{{ url_for('logout') }}" style="color: var(--text-soft); text-decoration: none; margin-left: 1rem;">Logout</a>
+        </div>
+    </header>
+
+    <main class="shell">
+        <div class="hub-hero">
+            <h2>Your Analytics Portal</h2>
+            <p>Click on any section below to explore detailed analysis and insights</p>
+        </div>
+
+        <div class="quick-stats" id="quickStats"></div>
+
+        <div class="cards-grid">
+            {% if user.type in ['teacher', 'admin'] %}
+            <a href="{{ url_for('teacher_dashboard') }}" class="card">
+                <div class="card-icon">📝</div>
+                <div class="card-content">
+                    <h3 class="card-title">Teacher Dashboard</h3>
+                    <p class="card-description">Upload and update student marks using a CSV file with built-in validation</p>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+            {% endif %}
+
+            <a href="{{ url_for('briefing') }}" class="card">
+                <div class="card-icon">📊</div>
+                <div class="card-content">
+                    <h3 class="card-title">AI Briefing</h3>
+                    <p class="card-description">Executive summary with cohort momentum, key insights, and class-level metrics</p>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+
+            <a href="{{ url_for('performance') }}" class="card">
+                <div class="card-icon">🎯</div>
+                <div class="card-content">
+                    <h3 class="card-title">Performance & Risk</h3>
+                    <p class="card-description">Standout performers, intervention candidates, near-pass students, and risk distribution</p>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+
+            <a href="{{ url_for('subject_focus') }}" class="card">
+                <div class="card-icon">📚</div>
+                <div class="card-content">
+                    <h3 class="card-title">Subject Focus</h3>
+                    <p class="card-description">Subject-wise performance analysis and recommended actions</p>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+
+            <a href="{{ url_for('metrics') }}" class="card">
+                <div class="card-icon">📈</div>
+                <div class="card-content">
+                    <h3 class="card-title">Performance Metrics</h3>
+                    <p class="card-description">Top 3 leaderboard, grade distribution, and subject averages</p>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+
+            <a href="{{ url_for('students_overview') }}" class="card">
+                <div class="card-icon">👥</div>
+                <div class="card-content">
+                    <h3 class="card-title">Students Overview</h3>
+                    <p class="card-description">Complete student listing with recommended interventions</p>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+        </div>
+    </main>
+
+    <script>
+        // Update date
+        function updateDate() {
+            const options = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
+            const today = new Date().toLocaleDateString('en-US', options);
+            document.getElementById('liveDate').textContent = today;
+        }
+        updateDate();
+
+        // Load quick stats
+        fetch('/api/analysis')
+            .then(r => r.json())
+            .then(data => {
+                const summary = data.summary || {};
+                const stats = document.getElementById('quickStats');
+                
+                const createStat = (label, value) => {
+                    const box = document.createElement('div');
+                    box.className = 'stat-box';
+                    box.innerHTML = `
+                        <div class="stat-label">${label}</div>
+                        <div class="stat-value">${value}</div>
+                    `;
+                    stats.appendChild(box);
+                };
+
+                if (summary.class_profile) {
+                    createStat('Pass Rate', summary.class_profile.pass_rate + '%');
+                    createStat('Class Avg', summary.class_profile.class_average.toFixed(1));
+                    createStat('Consistency', summary.class_profile.consistency.toFixed(1));
+                }
+                if (summary.momentum) {
+                    createStat('Momentum Score', summary.momentum.score.toFixed(1));
+                }
+            })
+            .catch(e => console.error('Failed to load stats:', e));
+    </script>
+</body>
+</html>

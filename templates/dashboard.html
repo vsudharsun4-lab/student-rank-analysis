@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - EduRank AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script defer src="{{ url_for('static', filename='dashboard.js') }}"></script>
+</head>
+<body>
+    <div class="aurora" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+
+    <header class="topbar">
+        <div class="brand">
+            <div class="brand__mark">EA</div>
+            <div>
+                <p class="brand__label">EduRank AI</p>
+                <h1>Command Center</h1>
+            </div>
+        </div>
+        <div class="topbar__meta">
+            <span class="chip" id="liveDate"></span>
+            <span class="chip chip--live">Live model sync</span>
+            <span class="chip">{{ user.name }}</span>
+            <a href="{{ url_for('logout') }}" style="color: var(--text-soft); text-decoration: none; margin-left: 1rem;">Logout</a>
+        </div>
+    </header>
+
+    <main class="shell">
+        <section class="hero">
+            <p class="eyebrow">Portfolio-ready education analytics product</p>
+            <h2>AI-first student performance intelligence for ranking, risk, and intervention planning.</h2>
+            <p class="subtitle">Track cohort momentum, identify intervention candidates, and explore subject-level signals in one premium dashboard experience.</p>
+        </section>
+
+        <section class="kpis" id="kpis"></section>
+
+        <section class="panel panel--wide panel--gradient">
+            <div class="panel__header">
+                <h3>AI Briefing</h3>
+            </div>
+            <div class="briefing">
+                <div class="briefing__primary">
+                    <div class="score" id="momentumScore"></div>
+                    <p class="briefing__narrative" id="aiNarrative"></p>
+                    <div class="brief-kpis" id="briefKpis"></div>
+                    <ul id="aiInsightList" class="insight-list"></ul>
+                </div>
+                <div class="briefing__lists">
+                    <div>
+                        <h4>Standout Performers</h4>
+                        <div id="standoutList"></div>
+                    </div>
+                    <div>
+                        <h4>Intervention Candidates</h4>
+                        <div id="interventionList"></div>
+                    </div>
+                    <div>
+                        <h4>Near Pass Students</h4>
+                        <div id="nearPassList"></div>
+                    </div>
+                    <div>
+                        <h4>Risk Distribution</h4>
+                        <div id="riskBreakdown" class="risk-breakdown"></div>
+                    </div>
+                    <div>
+                        <h4>Subject Focus</h4>
+                        <div id="subjectFocusList"></div>
+                    </div>
+                    <div>
+                        <h4>Recommended Actions</h4>
+                        <ul id="actionList"></ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel panel--wide">
+            <div class="panel__header">
+                <h3>Top 3 Leaderboard</h3>
+            </div>
+            <div class="leaderboard" id="topThree"></div>
+        </section>
+
+        <section class="panel">
+            <div class="panel__header">
+                <h3>Grade Distribution</h3>
+            </div>
+            <canvas id="gradeChart" class="chart-canvas"></canvas>
+        </section>
+
+        <section class="panel">
+            <div class="panel__header">
+                <h3>Pass vs Fail</h3>
+            </div>
+            <canvas id="resultChart" class="chart-canvas"></canvas>
+        </section>
+
+        <section class="panel panel--wide">
+            <div class="panel__header">
+                <h3>Subject Average Performance</h3>
+            </div>
+            <canvas id="subjectChart" class="chart-canvas"></canvas>
+        </section>
+
+        <section class="panel panel--wide">
+            <div class="panel__header">
+                <h3>Students Overview</h3>
+            </div>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                    <thead>
+                        <tr style="background: var(--panel-soft); border-bottom: 2px solid var(--line);">
+                            <th style="padding: 1rem; text-align: left; font-weight: 600;">Name</th>
+                            <th style="padding: 1rem; text-align: center; font-weight: 600;">Rank</th>
+                            <th style="padding: 1rem; text-align: center; font-weight: 600;">Average</th>
+                            <th style="padding: 1rem; text-align: center; font-weight: 600;">Grade</th>
+                            <th style="padding: 1rem; text-align: center; font-weight: 600;">Status</th>
+                            <th style="padding: 1rem; text-align: center; font-weight: 600;">Risk</th>
+                            <th style="padding: 1rem; text-align: center; font-weight: 600;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentsTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="panel panel--wide">
+            <div class="panel__header">
+                <h3>Recommended Interventions</h3>
+            </div>
+            <div id="interventionsContainer" style="display: grid; gap: 1rem;"></div>
+        </section>
+    </main>
+
+    <footer style="text-align: center; padding: 2rem; color: var(--text-soft); font-size: 0.85rem; border-top: 1px solid var(--line); margin-top: 3rem;">
+        <p style="margin: 0;">EduRank AI • Academic Performance & Recommendation Platform • Dashboard View</p>
+    </footer>
+</body>
+</html>

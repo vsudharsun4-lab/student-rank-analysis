@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Briefing - EduRank AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Removed inline dark styles to use the main light theme in `static/styles.css`.
+         UI-specific card/metric styles have been added to `static/styles.css`. -->
+</head>
+<body class="briefing-page">
+    <div class="aurora" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+
+    <header class="topbar">
+        <div class="brand">
+            <div class="brand__mark">EA</div>
+            <div>
+                <p class="brand__label">EduRank AI</p>
+                <h1>AI Briefing</h1>
+            </div>
+        </div>
+        <div class="topbar__meta">
+            <span class="chip" id="liveDate"></span>
+            <span class="chip chip--live">Live analysis</span>
+            <span class="chip">{{ user.name }}</span>
+            <a href="{{ url_for('logout') }}" style="color: var(--text-soft); text-decoration: none; margin-left: 1rem;">Logout</a>
+        </div>
+    </header>
+
+    <main class="shell">
+        <a href="{{ url_for('dashboard') }}" class="back-button">← Back to Dashboard</a>
+
+        <div class="hero-section">
+            <h2>Executive Summary</h2>
+            <div class="momentum-score" id="momentumScore">-</div>
+            <div class="momentum-status" id="momentumStatus">-</div>
+            <p id="aiNarrative" style="color: var(--text-soft); font-size: 0.95rem; margin-top: 1rem;"></p>
+        </div>
+
+        <div class="two-column">
+            <div>
+                <div class="panel">
+                    <h3>Class Profile</h3>
+                    <div class="metric-row">
+                        <span class="metric-label">Pass Rate</span>
+                        <span class="metric-value" id="passRate">-</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Class Average</span>
+                        <span class="metric-value" id="classAvg">-</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Median Average</span>
+                        <span class="metric-value" id="medianAvg">-</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Consistency</span>
+                        <span class="metric-value" id="consistency">-</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Score Spread</span>
+                        <span class="metric-value" id="scoreSpread">-</span>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h3>Risk Distribution</h3>
+                    <div class="risk-breakdown" id="riskBreakdown">
+                        <div class="risk-badge">
+                            <div class="risk-label">Low Risk</div>
+                            <div class="risk-number" id="riskLow">-</div>
+                        </div>
+                        <div class="risk-badge">
+                            <div class="risk-label">Medium Risk</div>
+                            <div class="risk-number" id="riskMedium">-</div>
+                        </div>
+                        <div class="risk-badge">
+                            <div class="risk-label">High Risk</div>
+                            <div class="risk-number" id="riskHigh">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="panel">
+                    <h3>Key Insights</h3>
+                    <ul class="insight-list" id="aiInsightList"></ul>
+                </div>
+
+                <div class="panel">
+                    <h3>Subject Performance</h3>
+                    <div id="subjectFocusList"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel panel--main">
+            <h3>Standout Performers</h3>
+            <div class="student-list" id="standoutList"></div>
+        </div>
+
+        <div class="panel panel--half">
+            <h3>Intervention Candidates</h3>
+            <div class="student-list" id="interventionList"></div>
+        </div>
+
+        <div class="panel panel--half">
+            <h3>Near Pass Students (Opportunity Zone)</h3>
+            <div class="student-list" id="nearPassList"></div>
+        </div>
+    </main>
+
+    <script>
+        function updateDate() {
+            const options = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
+            document.getElementById('liveDate').textContent = new Date().toLocaleDateString('en-US', options);
+        }
+        updateDate();
+
+        function renderStudentCard(student) {
+            return `
+                <div class="student-card">
+                    <div class="student-name">${student.name}</div>
+                    <div class="student-info">Rank: #${student.rank}</div>
+                    <div class="student-info">Grade: <strong>${student.grade}</strong></div>
+                    <div class="student-info">Status: <strong>${student.result}</strong></div>
+                    <div class="student-avg">${student.average}</div>
+                </div>
+            `;
+        }
+
+        fetch('/api/analysis')
+            .then(r => r.json())
+            .then(data => {
+                const brief = data.summary || {};
+
+                // Momentum Section
+                if (brief.momentum) {
+                    document.getElementById('momentumScore').textContent = brief.momentum.score.toFixed(1);
+                    document.getElementById('momentumStatus').textContent = brief.momentum.status;
+                }
+
+                // Class Profile
+                if (brief.class_profile) {
+                    document.getElementById('passRate').textContent = brief.class_profile.pass_rate.toFixed(1) + '%';
+                    document.getElementById('classAvg').textContent = brief.class_profile.class_average.toFixed(1);
+                    document.getElementById('medianAvg').textContent = brief.class_profile.median_average.toFixed(1);
+                    document.getElementById('consistency').textContent = brief.class_profile.consistency.toFixed(1);
+                    document.getElementById('scoreSpread').textContent = brief.class_profile.score_spread;
+                }
+
+                // Risk Breakdown
+                if (brief.risk_breakdown) {
+                    document.getElementById('riskLow').textContent = brief.risk_breakdown.Low || 0;
+                    document.getElementById('riskMedium').textContent = brief.risk_breakdown.Medium || 0;
+                    document.getElementById('riskHigh').textContent = brief.risk_breakdown.High || 0;
+                }
+
+                // Standout Performers
+                if (brief.standout_performers && brief.standout_performers.length > 0) {
+                    const list = document.getElementById('standoutList');
+                    brief.standout_performers.forEach(s => {
+                        list.innerHTML += renderStudentCard(s);
+                    });
+                }
+
+                // Intervention Candidates
+                if (brief.intervention_candidates && brief.intervention_candidates.length > 0) {
+                    const list = document.getElementById('interventionList');
+                    brief.intervention_candidates.forEach(s => {
+                        list.innerHTML += renderStudentCard(s);
+                    });
+                }
+
+                // Near Pass Students
+                if (brief.near_pass_students && brief.near_pass_students.length > 0) {
+                    const list = document.getElementById('nearPassList');
+                    brief.near_pass_students.forEach(s => {
+                        list.innerHTML += renderStudentCard(s);
+                    });
+                }
+
+                // Key Insights
+                if (brief.momentum && brief.class_profile) {
+                    const insights = document.getElementById('aiInsightList');
+                    const insightTexts = [];
+
+                    if (brief.momentum.score >= 85) {
+                        insightTexts.push('Excellent class momentum - maintain current pace');
+                    } else if (brief.momentum.score >= 70) {
+                        insightTexts.push('Stable class performance - focus on high-risk students');
+                    } else {
+                        insightTexts.push('Class needs attention - prioritize interventions');
+                    }
+
+                    if (brief.class_profile.pass_rate >= 90) {
+                        insightTexts.push(`Strong pass rate (${brief.class_profile.pass_rate.toFixed(1)}%) indicates solid fundamentals`);
+                    } else if (brief.class_profile.pass_rate < 70) {
+                        insightTexts.push(`Low pass rate (${brief.class_profile.pass_rate.toFixed(1)}%) requires immediate action`);
+                    }
+
+                    insightTexts.push(`Score spread of ${brief.class_profile.score_spread} points shows ${brief.class_profile.score_spread > 40 ? 'high' : 'moderate'} performance variance`);
+
+                    insightTexts.forEach(text => {
+                        const li = document.createElement('li');
+                        li.className = 'insight-item';
+                        li.textContent = text;
+                        insights.appendChild(li);
+                    });
+                }
+
+                // Subject Focus
+                if (brief.subject_focus) {
+                    const subjectList = document.getElementById('subjectFocusList');
+                    brief.subject_focus.forEach(s => {
+                        const div = document.createElement('div');
+                        div.className = 'metric-row';
+                        div.innerHTML = `
+                            <span class="metric-label">${s.subject} <span style="color: #ff6b6b;">${s.priority}</span></span>
+                            <span class="metric-value">${s.average}</span>
+                        `;
+                        subjectList.appendChild(div);
+                    });
+                }
+            })
+            .catch(e => {
+                console.error('Failed to load briefing:', e);
+                document.getElementById('momentumScore').textContent = 'Error loading data';
+            });
+    </script>
+</body>
+</html>

@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ profile.personal.name }} - Student Profile | EduRank AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .student-profile-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .profile-header {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .student-card {
+            background: linear-gradient(135deg, rgba(15, 157, 122, 0.1) 0%, rgba(46, 111, 255, 0.1) 100%);
+            border: 1px solid rgba(15, 157, 122, 0.2);
+            border-radius: 18px;
+            padding: 2rem;
+        }
+
+        .student-name {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin: 0 0 1rem;
+            color: var(--text);
+        }
+
+        .status-badges {
+            display: flex;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .badge.grade {
+            background: linear-gradient(135deg, var(--brand) 0%, var(--brand-3) 100%);
+            color: #fff;
+        }
+
+        .badge.pass {
+            background: rgba(31, 143, 95, 0.15);
+            color: var(--success);
+        }
+
+        .badge.fail {
+            background: rgba(201, 56, 56, 0.15);
+            color: var(--danger);
+        }
+
+        .badge.risk-low {
+            background: rgba(31, 143, 95, 0.15);
+            color: var(--success);
+        }
+
+        .badge.risk-medium {
+            background: rgba(217, 119, 6, 0.15);
+            color: var(--warning);
+        }
+
+        .badge.risk-high {
+            background: rgba(201, 56, 56, 0.15);
+            color: var(--danger);
+        }
+
+        .quick-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .stat-box {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--brand);
+            margin: 0;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-soft);
+            margin: 0.5rem 0 0;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            padding: 1.8rem;
+            box-shadow: var(--shadow);
+        }
+
+        .panel-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin: 0 0 1.5rem;
+            color: var(--text);
+        }
+
+        .subject-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .subject-card {
+            background: linear-gradient(135deg, #f9f9f7 0%, #efefeb 100%);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 1.2rem;
+            text-align: center;
+        }
+
+        .subject-name {
+            font-weight: 600;
+            color: var(--text-soft);
+            font-size: 0.85rem;
+            margin: 0 0 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .subject-marks {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--brand);
+            margin: 0;
+        }
+
+        .subject-status {
+            font-size: 0.75rem;
+            color: var(--text-soft);
+            margin-top: 0.5rem;
+        }
+
+        .trajectory-line {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: rgba(15, 157, 122, 0.05);
+            border-radius: 10px;
+        }
+
+        .trajectory-direction {
+            font-size: 1.8rem;
+            min-width: 60px;
+        }
+
+        .trajectory-info {
+            flex: 1;
+        }
+
+        .trajectory-info p {
+            margin: 0;
+            color: var(--text-soft);
+            font-size: 0.9rem;
+        }
+
+        .recommendations-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .recommendations-list li {
+            background: linear-gradient(135deg, rgba(15, 157, 122, 0.08) 0%, rgba(46, 111, 255, 0.08) 100%);
+            border-left: 3px solid var(--brand);
+            padding: 1rem;
+            margin-bottom: 0.8rem;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            color: var(--text);
+        }
+
+        .action-item {
+            background: linear-gradient(135deg, rgba(255, 124, 67, 0.1) 0%, rgba(201, 56, 56, 0.05) 100%);
+            border-left: 3px solid var(--brand-2);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 6px;
+        }
+
+        .action-title {
+            font-weight: 700;
+            color: var(--text);
+            margin: 0 0 0.5rem;
+        }
+
+        .action-details {
+            font-size: 0.9rem;
+            color: var(--text-soft);
+            margin: 0;
+        }
+
+        .intervention-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .intervention-table th,
+        .intervention-table td {
+            padding: 0.8rem;
+            text-align: left;
+            border-bottom: 1px solid var(--line);
+            font-size: 0.9rem;
+        }
+
+        .intervention-table th {
+            background: var(--panel-soft);
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .intervention-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .top-button {
+            display: inline-block;
+            margin-bottom: 1.5rem;
+            padding: 0.7rem 1.4rem;
+            background: var(--panel-soft);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--text);
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .top-button:hover {
+            background: var(--line);
+            transform: translateY(-1px);
+        }
+
+        @media (max-width: 768px) {
+            .profile-header {
+                grid-template-columns: 1fr;
+            }
+
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+
+            .student-profile-container {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="aurora" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+
+    <header class="topbar">
+        <div class="brand">
+            <div class="brand__mark">EA</div>
+            <div>
+                <p class="brand__label">EduRank AI</p>
+                <h1>Student Profile</h1>
+            </div>
+        </div>
+        <div class="topbar__meta">
+            <span class="chip">{{ user.name }}</span>
+            <a href="{{ url_for('dashboard') }}" style="color: var(--text-soft); text-decoration: none; margin-left: 1rem;">← Back to Dashboard</a>
+            <a href="{{ url_for('logout') }}" style="color: var(--text-soft); text-decoration: none; margin-left: 1rem;">Logout</a>
+        </div>
+    </header>
+
+    <main class="student-profile-container">
+        <!-- Header -->
+        <div class="profile-header">
+            <div class="student-card">
+                <h2 class="student-name">{{ profile.personal.name }}</h2>
+                <div class="status-badges">
+                    <span class="badge grade">{{ profile.personal.grade }}</span>
+                    <span class="badge {% if profile.personal.result == 'Pass' %}pass{% else %}fail{% endif %}">
+                        {{ profile.personal.result }}
+                    </span>
+                    <span class="badge risk-{{ profile.personal.risk.lower() }}">
+                        {{ profile.personal.risk }} Risk
+                    </span>
+                </div>
+                <div class="quick-stats">
+                    <div class="stat-box">
+                        <p class="stat-value">{{ profile.personal.total }}</p>
+                        <p class="stat-label">Total Marks</p>
+                    </div>
+                    <div class="stat-box">
+                        <p class="stat-value">{{ profile.personal.average }}</p>
+                        <p class="stat-label">Average</p>
+                    </div>
+                    <div class="stat-box">
+                        <p class="stat-value">#{{ profile.personal.rank }}</p>
+                        <p class="stat-label">Class Rank</p>
+                    </div>
+                    <div class="stat-box">
+                        <p class="stat-value">{{ profile.comparison.percentile_rank }}%</p>
+                        <p class="stat-label">Percentile</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h3 class="panel-title" style="margin-top: 0;">Performance Snapshot</h3>
+                <div class="trajectory-line">
+                    <div class="trajectory-direction">{{ profile.trajectory.direction }}</div>
+                    <div class="trajectory-info">
+                        <p><strong>Current Score:</strong> {{ profile.trajectory.current_score }}</p>
+                        <p><strong>Confidence:</strong> {{ profile.trajectory.trajectory[0].confidence }}%</p>
+                        <p style="margin-top: 0.5rem; font-size: 0.8rem;">{{ profile.trajectory.prediction_horizon }}</p>
+                    </div>
+                </div>
+                <div style="background: rgba(46, 111, 255, 0.08); padding: 1rem; border-radius: 10px;">
+                    <p style="margin: 0; font-size: 0.85rem; color: var(--text-soft);">
+                        <strong>vs Class Average:</strong> 
+                        <span style="color: {% if profile.comparison.vs_class_avg > 0 %}var(--success){% else %}var(--danger){% endif %}">
+                            {{ profile.comparison.vs_class_avg }}
+                        </span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Subject Performance -->
+        <div class="panel" style="margin-bottom: 2rem;">
+            <h3 class="panel-title">Subject Performance</h3>
+            <div class="subject-grid">
+                {% for subject, data in profile.subjects.items() %}
+                <div class="subject-card">
+                    <p class="subject-name">{{ subject }}</p>
+                    <p class="subject-marks">{{ data.marks }}</p>
+                    <p class="subject-status">{{ data.status }}</p>
+                    <p class="subject-status">{{ data.percentile }}th percentile</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Predictions and Recommendations -->
+        <div class="grid-2">
+            <!-- Trajectory Predictions -->
+            <div class="panel">
+                <h3 class="panel-title">📊 Performance Trajectory</h3>
+                <p style="color: var(--text-soft); font-size: 0.9rem; margin-bottom: 1rem;">
+                    Predicted performance trends for the next 4 weeks based on current consistency and risk profile.
+                </p>
+                <table style="width: 100%; font-size: 0.9rem;">
+                    <tr style="border-bottom: 1px solid var(--line);">
+                        <th style="text-align: left; padding: 0.5rem 0; font-weight: 600;">Week</th>
+                        <th style="text-align: left; padding: 0.5rem 0; font-weight: 600;">Score</th>
+                        <th style="text-align: left; padding: 0.5rem 0; font-weight: 600;">Confidence</th>
+                    </tr>
+                    {% for point in profile.trajectory.trajectory %}
+                    <tr style="border-bottom: 1px solid var(--line);">
+                        <td style="padding: 0.8rem 0;">Week {{ point.week }}</td>
+                        <td style="padding: 0.8rem 0; font-weight: 600;">{{ point.predicted_score }}</td>
+                        <td style="padding: 0.8rem 0;">{{ point.confidence }}%</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+
+            <!-- Priority Actions -->
+            <div class="panel">
+                <h3 class="panel-title">🎯 Priority Actions</h3>
+                {% for action in profile.recommendations.priority_actions %}
+                <div class="action-item">
+                    <p class="action-title">{{ action.action }}</p>
+                    <p class="action-details">{{ action.details }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Personalized Recommendations -->
+        <div class="panel" style="margin-bottom: 2rem;">
+            <h3 class="panel-title">💡 Personalized Learning Tips</h3>
+            <ul class="recommendations-list">
+                {% for tip in profile.recommendations.personalized_tips %}
+                <li>{{ tip }}</li>
+                {% endfor %}
+            </ul>
+            <p style="font-size: 0.85rem; color: var(--text-soft); margin-top: 1.5rem;">
+                <strong>Next Review:</strong> {{ profile.recommendations.next_review_date }}
+            </p>
+        </div>
+
+        <!-- Intervention Plan (if needed) -->
+        {% if profile.intervention.status != 'not_needed' %}
+        <div class="panel" style="margin-bottom: 2rem; background: linear-gradient(135deg, rgba(255, 124, 67, 0.08) 0%, rgba(201, 56, 56, 0.05) 100%); border-color: rgba(201, 56, 56, 0.2);">
+            <h3 class="panel-title" style="color: var(--danger);">⚠️ Intervention Plan</h3>
+            <p style="color: var(--text-soft); margin-bottom: 1rem;">
+                A focused {{ profile.intervention.intervention_level }}-level intervention has been designed to support your academic goals.
+            </p>
+            <div style="background: var(--panel); padding: 1rem; border-radius: 10px; margin-bottom: 1.5rem;">
+                <p style="margin: 0.5rem 0;"><strong>Current Average:</strong> {{ profile.intervention.current_average }}</p>
+                <p style="margin: 0.5rem 0;"><strong>Target Score:</strong> {{ profile.intervention.target_score }}</p>
+                {% if profile.intervention.failed_subjects %}
+                <p style="margin: 0.5rem 0;"><strong>Focus Areas:</strong> {{ profile.intervention.failed_subjects|join(', ') }}</p>
+                {% endif %}
+            </div>
+
+            <h4 style="margin-top: 1.5rem; margin-bottom: 1rem; color: var(--text);">4-Week Support Plan:</h4>
+            {% for week in profile.intervention['4week_plan'] %}
+            <div style="margin-bottom: 1.2rem; padding: 1rem; background: var(--panel); border-radius: 10px; border-left: 3px solid var(--brand);">
+                <strong style="color: var(--text);">{{ week.focus }}</strong>
+                <ul style="margin: 0.5rem 0 0; padding-left: 1.5rem; font-size: 0.9rem; color: var(--text-soft);">
+                    {% for activity in week.activities %}
+                    <li>{{ activity }}</li>
+                    {% endfor %}
+                </ul>
+                <p style="margin: 0.5rem 0 0; font-size: 0.85rem; color: var(--text-soft);">
+                    <strong>Checkpoint:</strong> {{ week.checkpoint }}
+                </p>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </main>
+
+    <footer style="text-align: center; padding: 2rem; color: var(--text-soft); font-size: 0.85rem; border-top: 1px solid var(--line); margin-top: 3rem;">
+        <p style="margin: 0;">EduRank AI • Academic Performance & Recommendation Platform • Session: {{ user.type.upper() }}</p>
+    </footer>
+</body>
+</html>

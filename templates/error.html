@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error - EduRank AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        .error-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .error-card {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 24px;
+            padding: 3rem;
+            max-width: 600px;
+            text-align: center;
+            box-shadow: var(--shadow);
+        }
+
+        .error-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .error-card h1 {
+            font-size: 2rem;
+            margin: 0 0 1rem;
+            color: var(--text);
+            font-family: "Space Grotesk", sans-serif;
+        }
+
+        .error-card p {
+            color: var(--text-soft);
+            margin: 0 0 2rem;
+            line-height: 1.6;
+        }
+
+        .error-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .error-btn {
+            padding: 0.8rem 1.8rem;
+            border-radius: 10px;
+            font-weight: 600;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .error-btn-primary {
+            background: linear-gradient(135deg, var(--brand) 0%, var(--brand-3) 100%);
+            color: #fff;
+        }
+
+        .error-btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(15, 157, 122, 0.25);
+        }
+
+        .error-btn-secondary {
+            background: var(--panel-soft);
+            border: 1px solid var(--line);
+            color: var(--text);
+        }
+
+        .error-btn-secondary:hover {
+            background: var(--line);
+        }
+    </style>
+</head>
+<body>
+    <div class="aurora" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+
+    <div class="error-container">
+        <div class="error-card">
+            <div class="error-icon">⚠️</div>
+            <h1>Something Went Wrong</h1>
+            <p>{{ message or 'An error occurred. Please try again later.' }}</p>
+            <div class="error-actions">
+                <a href="{{ url_for('dashboard') }}" class="error-btn error-btn-primary">← Back to Dashboard</a>
+                <a href="{{ url_for('logout') }}" class="error-btn error-btn-secondary">Logout</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

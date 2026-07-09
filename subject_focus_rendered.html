@@ -1,0 +1,344 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduRank AI - Login</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+    <style>
+        :root {
+            --bg: #f7f7f2;
+            --panel: #fffffb;
+            --text: #172024;
+            --text-soft: #5b6770;
+            --line: #d7dfd6;
+            --brand: #0f9d7a;
+            --brand-2: #ff7c43;
+            --brand-3: #2e6fff;
+            --danger: #c93838;
+            --success: #1f8f5f;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: radial-gradient(circle at 12% 10%, rgba(15, 157, 122, 0.18), transparent 30%), 
+                        radial-gradient(circle at 86% 0%, rgba(255, 124, 67, 0.16), transparent 26%), 
+                        var(--bg);
+            color: var(--text);
+            font-family: "IBM Plex Sans", sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .aurora {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(120deg, rgba(46, 111, 255, 0.07), rgba(15, 157, 122, 0.06), rgba(255, 124, 67, 0.08));
+            filter: blur(60px);
+            pointer-events: none;
+            z-index: -2;
+        }
+
+        .grain {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            pointer-events: none;
+            background-image: linear-gradient(rgba(23, 32, 36, 0.04) 1px, transparent 1px),
+                            linear-gradient(90deg, rgba(23, 32, 36, 0.03) 1px, transparent 1px);
+            background-size: 28px 28px;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 420px;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 24px;
+            padding: 3rem 2rem;
+            box-shadow: 0 20px 45px rgba(31, 50, 37, 0.08);
+            backdrop-filter: blur(10px);
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .login-mark {
+            width: 64px;
+            height: 64px;
+            border-radius: 18px;
+            display: grid;
+            place-items: center;
+            color: #fff;
+            font-family: "Space Grotesk", sans-serif;
+            font-weight: 700;
+            font-size: 1.85rem;
+            background: linear-gradient(140deg, var(--brand), var(--brand-3));
+            box-shadow: 0 12px 32px rgba(46, 111, 255, 0.28);
+            margin: 0 auto 1rem;
+        }
+
+        .login-header h1 {
+            margin: 0;
+            font-family: "Space Grotesk", sans-serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--brand) 0%, var(--brand-3) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .login-header p {
+            margin: 0.5rem 0 0;
+            color: var(--text-soft);
+            font-size: 0.95rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.6rem;
+            color: var(--text);
+            font-size: 0.9rem;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.9rem 1rem;
+            border: 1.5px solid var(--line);
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            background: #fafaf8;
+            color: var(--text);
+            transition: all 0.2s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--brand);
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(15, 157, 122, 0.1);
+        }
+
+        .user-type-options {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .user-type-option {
+            flex: 1;
+        }
+
+        .user-type-option input {
+            display: none;
+        }
+
+        .user-type-label {
+            display: block;
+            padding: 0.75rem;
+            text-align: center;
+            border: 1.5px solid var(--line);
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.9rem;
+            background: #fafaf8;
+            transition: all 0.2s ease;
+        }
+
+        .user-type-option input:checked + .user-type-label {
+            background: var(--brand);
+            color: #fff;
+            border-color: var(--brand);
+        }
+
+        .student-select-group {
+            display: none;
+            animation: slideDown 0.3s ease;
+        }
+
+        .student-select-group.show {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, var(--brand) 0%, var(--brand-3) 100%);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 20px rgba(15, 157, 122, 0.25);
+            font-family: inherit;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 28px rgba(15, 157, 122, 0.35);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .error-message {
+            background: rgba(201, 56, 56, 0.1);
+            color: var(--danger);
+            padding: 0.85rem 1rem;
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+            border-left: 3px solid var(--danger);
+        }
+
+        .success-message {
+            background: rgba(31, 143, 95, 0.1);
+            color: var(--success);
+            padding: 0.85rem 1rem;
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+            border-left: 3px solid var(--success);
+        }
+
+        .auth-switch {
+            margin-top: 1.2rem;
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--text-soft);
+        }
+
+        .auth-switch a {
+            color: var(--brand-3);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .auth-switch a:hover {
+            text-decoration: underline;
+        }
+
+        .demo-note {
+            background: rgba(46, 111, 255, 0.08);
+            border-left: 3px solid var(--brand-3);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 2rem;
+            font-size: 0.85rem;
+            color: var(--text-soft);
+        }
+
+        .demo-note strong {
+            color: var(--text);
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .demo-note code {
+            background: #f0f0ec;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: "IBM Plex Mono", monospace;
+            font-size: 0.8rem;
+        }
+
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 2rem 1.5rem;
+            }
+
+            .login-header h1 {
+                font-size: 1.5rem;
+            }
+
+            .login-mark {
+                width: 56px;
+                height: 56px;
+                font-size: 1.6rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="aurora" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+
+    <div class="login-container">
+        <div class="login-header">
+            <div class="login-mark">EA</div>
+            <h1>EduRank AI</h1>
+            <p>Academic Intelligence Platform</p>
+        </div>
+
+        
+
+        
+
+        
+
+        <form method="POST">
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" required placeholder="your@email.com">
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required placeholder="••••••••">
+            </div>
+
+            <p style="margin: -0.7rem 0 1rem; text-align: right; font-size: 0.85rem;">
+                <a href="/forgot-password" style="color: var(--brand-3); text-decoration: none; font-weight: 600;">
+                    Forgot password?
+                </a>
+            </p>
+
+            <button type="submit" class="submit-btn">Sign In</button>
+        </form>
+
+        <p class="auth-switch">
+            New user? <a href="/signup">Create an account</a>
+        </p>
+
+        <div class="demo-note">
+            <strong>Demo Credentials:</strong>
+            Teacher: <code>teacher@eduai.com</code> / <code>teacher123</code><br>
+            Admin: <code>admin@eduai.com</code> / <code>admin123</code><br>
+            Student: <code>student@eduai.com</code> / <code>student123</code>
+        </div>
+    </div>
+
+</body>
+</html>

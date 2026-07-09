@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EduRank AI Command Center</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script defer src="{{ url_for('static', filename='script.js') }}"></script>
+</head>
+<body>
+  <div class="aurora" aria-hidden="true"></div>
+  <div class="grain" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand__mark">EA</div>
+      <div>
+        <p class="brand__label">EduRank AI</p>
+        <h1>Command Center</h1>
+      </div>
+    </div>
+    <div class="topbar__meta">
+      <span class="chip" id="liveDate"></span>
+      <span class="chip chip--live">Live model sync</span>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="hero">
+      <p class="eyebrow">Portfolio-ready education analytics product</p>
+      <h2>AI-first student performance intelligence for ranking, risk, and intervention planning.</h2>
+      <p class="subtitle">Track cohort momentum, identify intervention candidates, and explore subject-level signals in one premium dashboard experience.</p>
+    </section>
+
+    <section class="kpis" id="kpis"></section>
+
+    <section class="panel panel--wide panel--gradient">
+      <div class="panel__header">
+        <h3>AI Briefing</h3>
+      </div>
+      <div class="briefing">
+        <div class="briefing__primary">
+          <div class="score" id="momentumScore"></div>
+          <p class="briefing__narrative" id="aiNarrative"></p>
+          <div class="brief-kpis" id="briefKpis"></div>
+          <ul id="aiInsightList" class="insight-list"></ul>
+        </div>
+        <div class="briefing__lists">
+          <div>
+            <h4>Standout Performers</h4>
+            <div id="standoutList"></div>
+          </div>
+          <div>
+            <h4>Intervention Candidates</h4>
+            <div id="interventionList"></div>
+          </div>
+          <div>
+            <h4>Near Pass Students</h4>
+            <div id="nearPassList"></div>
+          </div>
+          <div>
+            <h4>Risk Distribution</h4>
+            <div id="riskBreakdown" class="risk-breakdown"></div>
+          </div>
+          <div>
+            <h4>Subject Focus</h4>
+            <div id="subjectFocusList"></div>
+          </div>
+          <div>
+            <h4>Recommended Actions</h4>
+            <ul id="actionList"></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel panel--wide">
+      <div class="panel__header">
+        <h3>Top 3 Leaderboard</h3>
+      </div>
+      <div class="leaderboard" id="topThree"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel__header">
+        <h3>Grade Distribution</h3>
+      </div>
+      <canvas id="gradeChart" class="chart-canvas"></canvas>
+    </section>
+
+    <section class="panel">
+      <div class="panel__header">
+        <h3>Pass vs Fail</h3>
+      </div>
+      <canvas id="resultChart" class="chart-canvas"></canvas>
+    </section>
+
+    <section class="panel panel--wide">
+      <div class="panel__header">
+        <h3>Subject Toppers</h3>
+      </div>
+      <div class="subject-grid" id="subjectToppers"></div>
+    </section>
+
+    <section class="panel panel--wide">
+      <div class="panel__header">
+        <h3>Subject Intelligence</h3>
+      </div>
+      <div class="subject-grid" id="subjectIntelligence"></div>
+    </section>
+
+    <section class="panel panel--wide">
+      <div class="panel__header">
+        <h3>Subject Comparison</h3>
+        <select id="subjectMetric" class="search" aria-label="Select subject metric">
+          <option value="average" selected>Average</option>
+          <option value="highest">Highest</option>
+          <option value="lowest">Lowest</option>
+          <option value="variance">Variance</option>
+        </select>
+      </div>
+      <div id="subjectSelector" class="subject-selector" aria-label="Select subjects"></div>
+      <canvas id="subjectAverageChart" class="chart-canvas"></canvas>
+    </section>
+
+    <section class="panel panel--wide">
+      <div class="panel__header table-header">
+        <div>
+          <h3>Student Performance Table</h3>
+          <p id="tableStats" class="table-meta"></p>
+        </div>
+        <div class="table-controls">
+          <input id="searchInput" class="search" type="search" placeholder="Search student name..." aria-label="Search students by name">
+          <select id="riskFilter" class="search" aria-label="Filter by risk level">
+            <option value="all">All Risk Levels</option>
+            <option value="Low">Low Risk</option>
+            <option value="Medium">Medium Risk</option>
+            <option value="High">High Risk</option>
+          </select>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead id="studentTableHead"></thead>
+          <tbody id="studentRows"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

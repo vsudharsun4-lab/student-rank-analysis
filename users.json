@@ -1,0 +1,32 @@
+{
+  "admin@eduai.com": {
+    "password_hash": "scrypt:32768:8:1$6X6mfM9Us8YhaED0$60ab0a61132100a257299a3f19bc2e85f4fb28492d34a9f40502e81f27adc86f174f393564206dc65020e2abb2ae606637bde12682079d7e4d741cf5bd79d51c",
+    "user_type": "admin",
+    "user_name": "Administrator",
+    "student_name": null
+  },
+  "teacher@eduai.com": {
+    "password_hash": "scrypt:32768:8:1$1rOEnzZp95IK8Zor$68ee06e581b5f87601607831db59a075d3e2a8a7dbb9bfb3765bf6b00faff4739c8724679bc4dacafdefa2648eaeb418fa167ce512aae5ae67f967ddaeddb099",
+    "user_type": "teacher",
+    "user_name": "Educator",
+    "student_name": null
+  },
+  "student@eduai.com": {
+    "password_hash": "scrypt:32768:8:1$kZSUO5iB2dGNyfmS$44916ba79467e086f7704bebd4ba4aa83717d5272c21bf7803fac11450e2d39572103eca8d35f58e5a7ee0eb92e228cd05ec7cbdacb084e4eb453760890ef830",
+    "user_type": "student",
+    "user_name": "Arun",
+    "student_name": "Arun"
+  },
+  "vsudharsun4@gmail.com": {
+    "password_hash": "scrypt:32768:8:1$C3x9JWw9VUnbgg8t$d30dde5c5b0339e31e1ef64dc3cdd53d47f6b9a169fe745dabb040fc0349f4ca21eef616ae5e6b4e576966ef9e3f3946f05ddcb936dbef7bde0a8060b1561db4",
+    "user_type": "admin",
+    "user_name": "sudharsun v",
+    "student_name": null
+  },
+  "sampathkumar13112005@gmail.com": {
+    "password_hash": "scrypt:32768:8:1$anbCam4hfEcKBJH4$88c7daac8f56c448a615efdfafea22a81e2c50f1b180b682350b8d4d3e171572500244415f3a536da0fdad16e35b082155dc51590021100a250a5fa4109c4b19",
+    "user_type": "admin",
+    "user_name": "sampath",
+    "student_name": null
+  }
+}
