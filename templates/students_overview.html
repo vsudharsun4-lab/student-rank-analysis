@@ -9,6 +9,84 @@
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <!-- Removed inline dark styles; using global `static/styles.css` for consistent light theme styling. -->
+    <style>
+        /* AI Loading Overlay Styles */
+        .ai-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            font-family: 'IBM Plex Sans', sans-serif;
+        }
+        .ai-overlay__backdrop {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 15, 30, 0.75);
+            backdrop-filter: blur(8px);
+        }
+        .ai-overlay__dialog {
+            position: relative;
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            border-radius: 20px;
+            padding: 2.5rem;
+            width: 90%;
+            max-width: 450px;
+            text-align: center;
+            color: #1a202c;
+        }
+        .ai-overlay__loader {
+            display: inline-block;
+            margin-bottom: 1.5rem;
+        }
+        .ai-overlay__spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(15, 157, 122, 0.15);
+            border-top-color: #0f9d7a;
+            border-radius: 50%;
+            animation: ai-spin 1s infinite linear;
+        }
+        @keyframes ai-spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .ai-overlay__title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin: 0 0 0.75rem;
+            color: #1a365d;
+        }
+        .ai-overlay__step {
+            font-size: 1rem;
+            color: #4a5568;
+            margin-bottom: 1.5rem;
+            min-height: 24px;
+            font-weight: 500;
+        }
+        .ai-overlay__progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .ai-overlay__progress {
+            height: 100%;
+            background: linear-gradient(90deg, #0f9d7a 0%, #2b6cb0 100%);
+            border-radius: 3px;
+            transition: width 0.4s ease;
+        }
+    </style>
 </head>
 <body class="students-overview-page">
     <div class="aurora" aria-hidden="true"></div>
@@ -52,6 +130,10 @@
                     <div class="stat-label">Pass Rate</div>
                     <div class="stat-value" id="passRateStat">-</div>
                 </div>
+                <div class="stat-card">
+                    <div class="stat-label">Attendance</div>
+                    <div class="stat-value" id="attendanceStat">-</div>
+                </div>
             </div>
         </div>
 
@@ -77,6 +159,7 @@
                             <th>Rank</th>
                             <th>Name</th>
                             <th>Average</th>
+                            <th>Attendance</th>
                             <th>Grade</th>
                             <th>Result</th>
                             <th>Risk Level</th>
@@ -85,7 +168,7 @@
                     </thead>
                     <tbody id="studentsTable">
                         <tr>
-                            <td colspan="7" style="text-align: center; color: var(--text-soft);">Loading students...</td>
+                            <td colspan="8" style="text-align: center; color: var(--text-soft);">Loading students...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -174,7 +257,7 @@
             });
 
             if (filtered.length === 0) {
-                table.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-soft);">No students found</td></tr>';
+                table.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-soft);">No students found</td></tr>';
                 return;
             }
 
@@ -183,6 +266,7 @@
                     <td class="rank-cell">#${s.Rank}</td>
                     <td class="name-cell">${s.Name}</td>
                     <td><strong>${s.Average.toFixed(1)}</strong></td>
+                    <td>${s.Attendance !== undefined && s.Attendance !== null && s.Attendance !== '' ? `${Number(s.Attendance).toFixed(1)}%` : '-'}</td>
                     <td><span class="badge ${s.Grade.toLowerCase()}">${s.Grade}</span></td>
                     <td><span class="badge ${s.Result.toLowerCase()}">${s.Result}</span></td>
                     <td>
@@ -192,6 +276,7 @@
                     <td>
                         <div class="action-cell">
                             <button class="action-btn" onclick='viewProfile(${JSON.stringify(s.Name)})'>View</button>
+                            <button class="action-btn" onclick="generateStudentReport(event, '${s.Name.replace(/'/g, "\\'")}')" style="background: var(--panel-soft); border: 1px solid var(--line); border-radius: 6px; color: var(--text); font-size: 0.85rem; font-weight: 500;">AI Report</button>
                             ${(s.Result === 'Fail' || s.RiskLevel === 'High') ? `<button class="action-btn" onclick='scheduleIntervention(${JSON.stringify(s.Name)})' style="background: rgba(255, 107, 107, 0.1); border-color: rgba(255, 107, 107, 0.3); color: #ff6b6b;">Intervene</button>` : ''}
                         </div>
                     </td>
@@ -298,6 +383,9 @@
                 document.getElementById('passStat').textContent = passed;
                 document.getElementById('failStat').textContent = failed;
                 document.getElementById('passRateStat').textContent = passRate + '%';
+                document.getElementById('attendanceStat').textContent = (data.summary && data.summary.attendance_present && data.summary.average_attendance !== null)
+                    ? `${Number(data.summary.average_attendance).toFixed(1)}%`
+                    : '-';
 
                 renderTable();
 
@@ -329,6 +417,57 @@
                 console.error('Failed to load students:', e);
                 document.getElementById('studentsTable').innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-soft);">Error loading students</td></tr>';
             });
+
+        function generateStudentReport(event, studentName) {
+            event.preventDefault();
+            const overlay = document.getElementById('aiLoadingOverlay');
+            const stepText = document.getElementById('aiOverlayStep');
+            const progress = document.getElementById('aiOverlayProgress');
+            
+            overlay.style.display = 'flex';
+            progress.style.width = '0%';
+            
+            const steps = [
+                { text: "Analyzing student performance...", width: "20%" },
+                { text: "Finding learning trends...", width: "40%" },
+                { text: "Predicting performance trajectory...", width: "60%" },
+                { text: "Generating personalized recommendations...", width: "80%" },
+                { text: "Creating professional PDF...", width: "100%" }
+            ];
+            
+            let currentStep = 0;
+            
+            function runStep() {
+                if (currentStep < steps.length) {
+                    stepText.textContent = steps[currentStep].text;
+                    progress.style.width = steps[currentStep].width;
+                    currentStep++;
+                    setTimeout(runStep, 700);
+                } else {
+                    setTimeout(() => {
+                        overlay.style.display = 'none';
+                        window.location.href = "/student/" + encodeURIComponent(studentName) + "/pdf";
+                    }, 500);
+                }
+            }
+            
+            runStep();
+        }
     </script>
+
+    <!-- AI Loading Overlay -->
+    <div id="aiLoadingOverlay" class="ai-overlay" style="display: none;">
+        <div class="ai-overlay__backdrop"></div>
+        <div class="ai-overlay__dialog">
+            <div class="ai-overlay__loader">
+                <div class="ai-overlay__spinner"></div>
+            </div>
+            <h3 class="ai-overlay__title">EduRank AI Agent</h3>
+            <div id="aiOverlayStep" class="ai-overlay__step">Analyzing student performance...</div>
+            <div class="ai-overlay__progress-bar">
+                <div id="aiOverlayProgress" class="ai-overlay__progress" style="width: 0%;"></div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

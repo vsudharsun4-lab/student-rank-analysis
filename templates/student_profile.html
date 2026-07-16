@@ -89,6 +89,48 @@
             gap: 1rem;
         }
 
+        .attendance-panel {
+            margin: 0 0 2rem;
+            background: linear-gradient(135deg, rgba(46, 111, 255, 0.08) 0%, rgba(15, 157, 122, 0.08) 100%);
+            border-color: rgba(46, 111, 255, 0.15);
+        }
+
+        .attendance-meta {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .attendance-pill {
+            padding: 0.85rem 1rem;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.72);
+            border: 1px solid rgba(215, 223, 214, 0.9);
+        }
+
+        .attendance-pill-label {
+            margin: 0 0 0.35rem;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-soft);
+            font-weight: 700;
+        }
+
+        .attendance-pill-value {
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .precaution-list {
+            margin: 0.5rem 0 0;
+            padding-left: 1.2rem;
+            color: var(--text-soft);
+        }
+
         .stat-box {
             background: var(--panel);
             border: 1px solid var(--line);
@@ -275,18 +317,83 @@
             transform: translateY(-1px);
         }
 
-        @media (max-width: 768px) {
-            .profile-header {
-                grid-template-columns: 1fr;
-            }
+        }
 
-            .grid-2 {
-                grid-template-columns: 1fr;
-            }
-
-            .student-profile-container {
-                padding: 1rem;
-            }
+        /* AI Loading Overlay Styles */
+        .ai-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            font-family: 'IBM Plex Sans', sans-serif;
+        }
+        .ai-overlay__backdrop {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 15, 30, 0.75);
+            backdrop-filter: blur(8px);
+        }
+        .ai-overlay__dialog {
+            position: relative;
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            border-radius: 20px;
+            padding: 2.5rem;
+            width: 90%;
+            max-width: 450px;
+            text-align: center;
+            color: #1a202c;
+        }
+        .ai-overlay__loader {
+            display: inline-block;
+            margin-bottom: 1.5rem;
+        }
+        .ai-overlay__spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(15, 157, 122, 0.15);
+            border-top-color: #0f9d7a;
+            border-radius: 50%;
+            animation: ai-spin 1s infinite linear;
+        }
+        @keyframes ai-spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .ai-overlay__title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin: 0 0 0.75rem;
+            color: #1a365d;
+        }
+        .ai-overlay__step {
+            font-size: 1rem;
+            color: #4a5568;
+            margin-bottom: 1.5rem;
+            min-height: 24px;
+            font-weight: 500;
+        }
+        .ai-overlay__progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .ai-overlay__progress {
+            height: 100%;
+            background: linear-gradient(90deg, #0f9d7a 0%, #2b6cb0 100%);
+            border-radius: 3px;
+            transition: width 0.4s ease;
         }
     </style>
 </head>
@@ -304,6 +411,7 @@
         </div>
         <div class="topbar__meta">
             <span class="chip">{{ user.name }}</span>
+            <a href="#" onclick="generateStudentReport(event)" style="color: #fff; background: var(--brand); padding: 0.4rem 0.8rem; border-radius: 6px; text-decoration: none; margin-left: 1rem; font-weight: 600;">📥 Generate AI Student Intelligence Report</a>
             <a href="{{ url_for('dashboard') }}" style="color: var(--text-soft); text-decoration: none; margin-left: 1rem;">← Back to Dashboard</a>
             <a href="{{ url_for('logout') }}" style="color: var(--text-soft); text-decoration: none; margin-left: 1rem;">Logout</a>
         </div>
@@ -363,6 +471,37 @@
                 </div>
             </div>
         </div>
+
+        {% if profile.attendance %}
+        <div class="panel attendance-panel">
+            <h3 class="panel-title">Attendance Analysis</h3>
+            <div class="attendance-meta">
+                <div class="attendance-pill">
+                    <p class="attendance-pill-label">Student Attendance</p>
+                    <p class="attendance-pill-value">{{ profile.attendance.percentage }}%</p>
+                </div>
+                <div class="attendance-pill">
+                    <p class="attendance-pill-label">Status</p>
+                    <p class="attendance-pill-value">{{ profile.attendance.status }}</p>
+                </div>
+                <div class="attendance-pill">
+                    <p class="attendance-pill-label">Class Average</p>
+                    <p class="attendance-pill-value">{{ profile.attendance.class_average }}%</p>
+                </div>
+                <div class="attendance-pill">
+                    <p class="attendance-pill-label">Deviation</p>
+                    <p class="attendance-pill-value">{{ profile.attendance.deviation_from_class }}%</p>
+                </div>
+            </div>
+            <p style="margin: 0 0 0.75rem; color: var(--text-soft);">{{ profile.attendance.advice }}</p>
+            <strong style="display: block; margin-bottom: 0.35rem; color: var(--text);">Precautionary Methods</strong>
+            <ul class="precaution-list">
+                {% for method in profile.attendance.precautionary_methods %}
+                <li>{{ method }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
 
         <!-- Subject Performance -->
         <div class="panel" style="margin-bottom: 2rem;">
@@ -464,5 +603,58 @@
     <footer style="text-align: center; padding: 2rem; color: var(--text-soft); font-size: 0.85rem; border-top: 1px solid var(--line); margin-top: 3rem;">
         <p style="margin: 0;">EduRank AI • Academic Performance & Recommendation Platform • Session: {{ user.type.upper() }}</p>
     </footer>
+
+    <!-- AI Loading Overlay -->
+    <div id="aiLoadingOverlay" class="ai-overlay" style="display: none;">
+        <div class="ai-overlay__backdrop"></div>
+        <div class="ai-overlay__dialog">
+            <div class="ai-overlay__loader">
+                <div class="ai-overlay__spinner"></div>
+            </div>
+            <h3 class="ai-overlay__title">EduRank AI Agent</h3>
+            <div id="aiOverlayStep" class="ai-overlay__step">Analyzing student performance...</div>
+            <div class="ai-overlay__progress-bar">
+                <div id="aiOverlayProgress" class="ai-overlay__progress" style="width: 0%;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function generateStudentReport(event) {
+            event.preventDefault();
+            const overlay = document.getElementById('aiLoadingOverlay');
+            const stepText = document.getElementById('aiOverlayStep');
+            const progress = document.getElementById('aiOverlayProgress');
+            
+            overlay.style.display = 'flex';
+            progress.style.width = '0%';
+            
+            const steps = [
+                { text: "Analyzing student performance...", width: "20%" },
+                { text: "Finding learning trends...", width: "40%" },
+                { text: "Predicting performance trajectory...", width: "60%" },
+                { text: "Generating personalized recommendations...", width: "80%" },
+                { text: "Creating professional PDF...", width: "100%" }
+            ];
+            
+            let currentStep = 0;
+            
+            function runStep() {
+                if (currentStep < steps.length) {
+                    stepText.textContent = steps[currentStep].text;
+                    progress.style.width = steps[currentStep].width;
+                    currentStep++;
+                    setTimeout(runStep, 700);
+                } else {
+                    setTimeout(() => {
+                        overlay.style.display = 'none';
+                        window.location.href = "{{ url_for('student_pdf', student_name=profile.personal.name) }}";
+                    }, 500);
+                }
+            }
+            
+            runStep();
+        }
+    </script>
 </body>
 </html>

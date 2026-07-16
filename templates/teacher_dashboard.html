@@ -24,7 +24,7 @@
         </div>
         <div class="topbar__meta">
             <span class="chip" id="liveDate"></span>
-            <span class="chip chip--live">Marks upload</span>
+            <span class="chip chip--live">Marks + attendance upload</span>
             <span class="chip">{{ user.name }}</span>
             <a href="{{ url_for('logout') }}" style="color: var(--text-soft); text-decoration: none; margin-left: 1rem;">Logout</a>
         </div>
@@ -42,7 +42,7 @@
             <div class="teacher-grid">
                 <div class="teacher-card">
                     <h4>Expected CSV Format</h4>
-                    <p class="teacher-helper">Your file must include <strong>Name</strong> (or <strong>student</strong>/<strong>student_name</strong>) and subject columns with marks between 0 and 100. You can use any subject names and any number of subjects (including 6+).</p>
+                    <p class="teacher-helper">Your file must include <strong>Name</strong> (or <strong>student</strong>/<strong>student_name</strong>), subject columns with marks between 0 and 100, and an optional <strong>Attendance</strong> column with values between 0 and 100. Attendance is tracked separately from marks.</p>
                     <div id="schemaColumns" class="schema-columns"></div>
                     <div id="schemaInfo" class="schema-info"></div>
                     <div class="template-builder">

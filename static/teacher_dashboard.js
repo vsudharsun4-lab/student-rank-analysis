@@ -11,16 +11,15 @@ function setUploadMessage(message, variant) {
 
 function renderSchema(schema) {
   const columnsEl = document.getElementById("schemaColumns");
-  columnsEl.innerHTML = "";
+  if (columnsEl) {
+    columnsEl.innerHTML = '<span class="schema-chip schema-chip--flexible">Any subject names are supported</span>';
+  }
 
-  schema.columns.forEach((column) => {
-    const chip = document.createElement("span");
-    chip.className = "schema-chip";
-    chip.textContent = column;
-    columnsEl.appendChild(chip);
-  });
+  const attendanceText = schema.attendance_present
+    ? `Attendance column: ${schema.attendance_column || "Attendance"} (high >= ${schema.attendance_thresholds.high}%, low < ${schema.attendance_thresholds.low}%)`
+    : "Attendance column: not present in the current dataset";
 
-  document.getElementById("schemaInfo").textContent = `Current dataset: ${schema.student_count} students, ${schema.subjects.length} subjects`;
+  document.getElementById("schemaInfo").textContent = `Current dataset: ${schema.student_count} students, ${schema.subjects.length} subjects. ${attendanceText}`;
 }
 
 function updateTemplateDownloadLink() {
@@ -62,7 +61,7 @@ function renderPreview(rows) {
     .join("");
 
   container.innerHTML = `
-    <div style="overflow-x: auto;">
+    <div class="preview-scroll">
       <table class="preview-table">
         <thead><tr>${tableHead}</tr></thead>
         <tbody>${tableRows}</tbody>
@@ -119,7 +118,12 @@ async function uploadMarks(event) {
     }
 
     setUploadMessage(payload.message || "Upload successful", "success");
-    document.getElementById("uploadMeta").textContent = `Saved ${payload.student_count} students across ${payload.subjects.length} subjects. Updated: ${payload.updated_at}`;
+    const attendance = payload.attendance_summary || {};
+    const attendanceText = attendance.present
+      ? `Attendance avg ${attendance.average?.toFixed?.(1) ?? attendance.average}% | High attendance: ${attendance.high_count} (${attendance.high_percentage}%) | Low attendance: ${attendance.low_count} (${attendance.low_percentage}%)`
+      : "Attendance not provided in the uploaded file.";
+
+    document.getElementById("uploadMeta").textContent = `Saved ${payload.student_count} students across ${payload.subjects.length} subjects. ${attendanceText} Updated: ${payload.updated_at}`;
     renderPreview(payload.preview || []);
     await loadSchema();
     fileInput.value = "";

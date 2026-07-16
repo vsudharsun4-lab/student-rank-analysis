@@ -35,6 +35,12 @@ A sophisticated, **production-ready** AI-powered educational analytics platform 
 - **Mentor assignment**: Tracks mentor contact and weekly reviews
 - **Escalation protocols**: Automatic flagging of critical cases
 
+### 🤖 AI Agent Workflow
+- **Prompt-driven analysis**: Ask natural-language questions about students, subjects, or the cohort
+- **Tool orchestration**: The agent routes queries through ranking, profile, and recommendation helpers
+- **Student-specific answers**: Supports named student lookups and personalized intervention guidance
+- **Resume-ready feature**: Presents the project as an AI agent system, not just a static dashboard
+
 ### 📱 Individual Student Profiles
 - **Comprehensive analytics**: Subject performance, trends, percentile rank
 - **Personalized dashboard**: Student's own performance insights

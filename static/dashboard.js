@@ -35,6 +35,10 @@ function renderKpis(summary) {
     { label: "Avg Consistency", value: summary.avg_consistency, note: "Stability index" },
   ];
 
+  if (summary.attendance_present) {
+    items.push({ label: "Attendance", value: `${summary.average_attendance}%`, note: "Class average" });
+  }
+
   container.innerHTML = items
     .map(
       (item) => `

@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Student Academic Performance Report</title>
+    <style>
+        @page {
+            size: letter;
+            margin: 0.6in 0.6in 0.8in 0.6in;
+        }
+        #footer {
+            position: fixed;
+            bottom: -0.5in;
+            left: 0in;
+            right: 0in;
+            height: 0.3in;
+            font-size: 8pt;
+            color: #7f8c8d;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 5px;
+        }
+        body {
+            font-family: "Helvetica", "Arial", sans-serif;
+            color: #2c3e50;
+            font-size: 10pt;
+            line-height: 1.5;
+        }
+        .header-table {
+            width: 100%;
+            border-bottom: 2px solid #0f9d7a;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .header-title {
+            font-size: 20pt;
+            font-weight: bold;
+            color: #1a365d;
+        }
+        .header-subtitle {
+            font-size: 10pt;
+            color: #7f8c8d;
+            text-align: right;
+            vertical-align: bottom;
+        }
+        .section-title {
+            font-size: 13pt;
+            font-weight: bold;
+            color: #1a365d;
+            border-left: 4px solid #0f9d7a;
+            padding-left: 8px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            background-color: #f7fafc;
+            padding-top: 4px;
+            padding-bottom: 4px;
+        }
+        .profile-table {
+            width: 100%;
+            margin-bottom: 15px;
+            border-collapse: collapse;
+        }
+        .profile-table td {
+            padding: 6px 10px;
+            border: 1px solid #e2e8f0;
+        }
+        .profile-label {
+            font-weight: bold;
+            background-color: #f7fafc;
+            width: 25%;
+            color: #4a5568;
+        }
+        .profile-val {
+            width: 25%;
+        }
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 9pt;
+            text-align: center;
+        }
+        .badge-pass {
+            background-color: #def7ec;
+            color: #03543f;
+        }
+        .badge-fail {
+            background-color: #fde8e8;
+            color: #9b1c1c;
+        }
+        .badge-risk-low {
+            background-color: #def7ec;
+            color: #03543f;
+        }
+        .badge-risk-medium {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        .badge-risk-high {
+            background-color: #fde8e8;
+            color: #9b1c1c;
+        }
+        .subject-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .subject-table th {
+            background-color: #2d3748;
+            color: white;
+            font-weight: bold;
+            padding: 8px;
+            font-size: 9pt;
+            text-align: left;
+        }
+        .subject-table td {
+            padding: 8px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 9.5pt;
+        }
+        .subject-table tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+        .chart-box {
+            text-align: center;
+            margin: 15px 0;
+            page-break-inside: avoid;
+        }
+        .chart-img {
+            max-width: 5.5in;
+            height: auto;
+        }
+        .list-item {
+            margin-bottom: 6px;
+            padding-left: 10px;
+        }
+        .study-plan-week {
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #fcfcfc;
+            page-break-inside: avoid;
+        }
+        .study-plan-title {
+            font-weight: bold;
+            color: #0f9d7a;
+            margin-bottom: 4px;
+        }
+        .page-break {
+            page-break-after: always;
+        }
+    </style>
+</head>
+<body>
+    <div id="footer">
+        <table style="width: 100%; border: none;">
+            <tr style="border: none;">
+                <td style="border: none; text-align: left; color: #7f8c8d; font-family: Helvetica, sans-serif;">EduRank AI • Confident &amp; Secure Academic Report</td>
+                <td style="border: none; text-align: right; color: #7f8c8d; font-family: Helvetica, sans-serif;">Page <pdf:pagenumber/> of <pdf:pagecount/></td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- PAGE 1: Profile, Summary, Subjects, Remarks -->
+    <table class="header-table">
+        <tr>
+            <td class="header-title">Student Performance Report</td>
+            <td class="header-subtitle">
+                EduRank AI Academic Analytics System<br>
+                Date: {{ current_date }}
+            </td>
+        </tr>
+    </table>
+
+    <div class="section-title">Student Profile</div>
+    <table class="profile-table">
+        <tr>
+            <td class="profile-label">Student Name:</td>
+            <td class="profile-val"><strong>{{ profile.personal.name }}</strong></td>
+            <td class="profile-label">Class Rank:</td>
+            <td class="profile-val">#{{ profile.personal.rank }} of {{ total_students }}</td>
+        </tr>
+        <tr>
+            <td class="profile-label">Grade / Result:</td>
+            <td class="profile-val">
+                <span class="badge">{{ profile.personal.grade }}</span> / 
+                <span class="badge {% if profile.personal.result == 'Pass' %}badge-pass{% else %}badge-fail{% endif %}">{{ profile.personal.result }}</span>
+            </td>
+            <td class="profile-label">Class Percentile:</td>
+            <td class="profile-val">{{ profile.comparison.percentile_rank }}%</td>
+        </tr>
+        <tr>
+            <td class="profile-label">Average Score:</td>
+            <td class="profile-val"><strong>{{ profile.personal.average }}%</strong> (Class Avg: {{ class_average }}%)</td>
+            <td class="profile-label">Academic Risk:</td>
+            <td class="profile-val">
+                <span class="badge badge-risk-{{ profile.personal.risk.lower() }}">{{ profile.personal.risk }} Risk</span>
+            </td>
+        </tr>
+        {% if profile.attendance %}
+        <tr>
+            <td class="profile-label">Attendance:</td>
+            <td class="profile-val">{{ profile.attendance.percentage }}% ({{ profile.attendance.status }})</td>
+            <td class="profile-label">Attendance Class Avg:</td>
+            <td class="profile-val">{{ profile.attendance.class_average }}% (Deviation: {{ profile.attendance.deviation_from_class }}%)</td>
+        </tr>
+        {% endif %}
+    </table>
+
+    <div class="section-title">Executive Performance Summary</div>
+    <p style="margin-bottom: 15px;">
+        {{ profile.trajectory.direction }} Current average is <strong>{{ profile.personal.average }}%</strong>, placing them 
+        <strong>{% if profile.comparison.vs_class_avg >= 0 %}{{ profile.comparison.vs_class_avg }}% above{% else %}{{ profile.comparison.vs_class_avg|abs }}% below{% endif %}</strong> the class average of {{ class_average }}%. 
+        Academic trajectory is predicted to be <strong>{{ profile.trajectory.direction }}</strong> over the next 4 weeks.
+    </p>
+
+    <div class="section-title">Subject-wise Analysis</div>
+    <table class="subject-table">
+        <thead>
+            <tr>
+                <th>Subject Name</th>
+                <th>Marks Scored</th>
+                <th>Class Average</th>
+                <th>Subject Percentile</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for subject, data in profile.subjects.items() %}
+            <tr>
+                <td><strong>{{ subject }}</strong></td>
+                <td>{{ data.marks }}%</td>
+                <td>{{ data.class_avg }}%</td>
+                <td>{{ data.percentile }}th percentile</td>
+                <td>
+                    <span class="badge {% if data.status == 'Pass' %}badge-pass{% else %}badge-fail{% endif %}">{{ data.status }}</span>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="section-title">Teacher Remarks</div>
+    <p style="font-style: italic; background-color: #f7fafc; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e0; margin-bottom: 20px;">
+        "{{ ai_content.teacher_remarks }}"
+    </p>
+
+    <div class="page-break"></div>
+
+    <!-- PAGE 2: Performance Charts, Strengths, Study Plan -->
+    <table class="header-table">
+        <tr>
+            <td class="header-title">Academic Analytics & Study Plan</td>
+            <td class="header-subtitle">{{ profile.personal.name }} • Page 2</td>
+        </tr>
+    </table>
+
+    <div class="section-title">Performance Charts</div>
+    <div class="chart-box">
+        <img class="chart-img" src="{{ chart_path }}" alt="Performance Chart">
+    </div>
+
+    <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+        <tr>
+            <td style="width: 48%; vertical-align: top; padding-right: 15px;">
+                <div class="section-title">Strengths</div>
+                {% for strength in ai_content.strengths %}
+                <div class="list-item">✔ {{ strength }}</div>
+                {% endfor %}
+            </td>
+            <td style="width: 48%; vertical-align: top; padding-left: 15px;">
+                <div class="section-title">Areas for Improvement</div>
+                {% for improvement in ai_content.improvements %}
+                <div class="list-item">⚠ {{ improvement }}</div>
+                {% endfor %}
+            </td>
+        </tr>
+    </table>
+
+    <div class="section-title">Performance Risk Assessment</div>
+    <p style="margin-bottom: 15px;">
+        {{ ai_content.risk_assessment }}
+    </p>
+
+    <div class="section-title">AI-generated Study Plan</div>
+    {% if profile.intervention.status == 'not_needed' %}
+        <p>Student is performing excellently. No critical academic intervention is required. Continue to challenge with advanced reading and mentoring opportunities.</p>
+    {% else %}
+        <p style="margin-bottom: 10px;">A personalized <strong>{{ profile.intervention.intervention_level }}</strong> level support plan has been set up with target score of <strong>{{ profile.intervention.target_score }}%</strong>.</p>
+        {% for week in profile.intervention['4week_plan'] %}
+        <div class="study-plan-week">
+            <div class="study-plan-title">{{ week.focus }}</div>
+            <ul style="margin: 3px 0; padding-left: 15px; font-size: 9pt;">
+                {% for act in week.activities %}
+                <li>{{ act }}</li>
+                {% endfor %}
+            </ul>
+            <div style="font-size: 8.5pt; color: #7f8c8d; margin-top: 4px;"><strong>Checkpoint:</strong> {{ week.checkpoint }}</div>
+        </div>
+        {% endfor %}
+    {% endif %}
+
+</body>
+</html>

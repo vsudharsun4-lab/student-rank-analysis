@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chat - EduRank AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script defer src="{{ url_for('static', filename='chat.js') }}"></script>
+</head>
+<body class="chat-page">
+    <div class="aurora" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+
+    <header class="topbar">
+        <div class="brand">
+            <div class="brand__mark">EA</div>
+            <div>
+                <p class="brand__label">EduRank AI</p>
+                <h1>AI Chat</h1>
+            </div>
+        </div>
+        <div class="topbar__meta">
+            <span class="chip" id="liveDate"></span>
+            <span class="chip chip--live">Natural language</span>
+            <span class="chip">{{ user.name }}</span>
+            <a href="{{ url_for('dashboard') }}" style="color: var(--text-soft); text-decoration: none;">Hub</a>
+            <a href="{{ url_for('logout') }}" style="color: var(--text-soft); text-decoration: none; margin-left: 0.6rem;">Logout</a>
+        </div>
+    </header>
+
+    <main class="shell">
+        <section class="chat-hero">
+            <div class="chat-hero__header">
+                <div>
+                    <p class="eyebrow">EduRank AI Chatbot</p>
+                    <h2 class="chat-hero__title">Student Data Agent &amp; Learning Assistant</h2>
+                </div>
+                <span class="chip chip--live">Active assistant</span>
+            </div>
+            <p class="chat-hero__subtitle">Your conversational assistant for student dataset query analytics and academic study topics. Try asking "What is my average?", "Explain Python loops", "Give me 10 SQL interview questions", or "Explain CNN".</p>
+        </section>
+
+        <div class="chat-layout">
+            <section class="panel chat-panel">
+                <div class="chat-thread" id="chatThread" aria-live="polite"></div>
+
+                <form id="chatForm" class="chat-composer">
+                    <div class="chat-composer__top">
+                        <div>
+                            <label class="chat-composer__label" for="studentFocus">Student focus</label>
+                            <select id="studentFocus" class="chat-composer__select">
+                                <option value="">Auto-detect from prompt</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="chat-composer__label">Quick prompts</label>
+                            <div class="chat-message__pill-row" id="promptRow"></div>
+                        </div>
+                    </div>
+                    <textarea id="chatInput" class="chat-composer__input" rows="4" placeholder="Ask about student metrics (e.g. 'What is my average?') or academic topics (e.g. 'Explain Python loops')..."></textarea>
+                    <div class="chat-composer__footer">
+                        <p class="chat-composer__hint">Press Enter to send. Use Shift+Enter for a new line.</p>
+                        <button id="chatSend" class="chat-composer__button" type="submit">Send Message</button>
+                    </div>
+                </form>
+            </section>
+
+            <aside class="chat-sidebar">
+                <section class="panel">
+                    <div class="panel__header">
+                        <h3>Suggested Questions</h3>
+                    </div>
+                    <div class="chat-suggestions">
+                        <div class="chat-suggestion-grid" id="chatSuggestions"></div>
+                    </div>
+                </section>
+            </aside>
+        </div>
+    </main>
+</body>
+</html>

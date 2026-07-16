@@ -8,8 +8,123 @@ from sklearn.linear_model import LinearRegression
 from datetime import datetime, timedelta
 
 
+ATTENDANCE_COLUMN_NAMES = {
+    "attendance",
+    "attendance%",
+    "attendance_percentage",
+    "attendance percentage",
+}
+
+
+def is_attendance_column(column: str) -> bool:
+    return str(column).strip().lower() in ATTENDANCE_COLUMN_NAMES
+
+
+def get_attendance_column(data: pd.DataFrame) -> str | None:
+    for column in data.columns:
+        if is_attendance_column(column):
+            return column
+    return None
+
+
 def get_subject_columns(data: pd.DataFrame) -> list[str]:
-    return [column for column in data.columns if column != "Name"]
+    return [column for column in data.columns if column != "Name" and not is_attendance_column(column)]
+
+
+def build_attendance_summary(data: pd.DataFrame) -> dict:
+    attendance_column = get_attendance_column(data)
+    if not attendance_column:
+        return {
+            "present": False,
+            "average": None,
+            "high_threshold": 90,
+            "low_threshold": 75,
+            "high_count": 0,
+            "low_count": 0,
+            "high_percentage": 0.0,
+            "low_percentage": 0.0,
+        }
+
+    attendance = pd.to_numeric(data[attendance_column], errors="coerce")
+    valid_attendance = attendance.dropna()
+    if valid_attendance.empty:
+        return {
+            "present": True,
+            "average": None,
+            "high_threshold": 90,
+            "low_threshold": 75,
+            "high_count": 0,
+            "low_count": 0,
+            "high_percentage": 0.0,
+            "low_percentage": 0.0,
+        }
+
+    high_threshold = 90
+    low_threshold = 75
+    total_students = int(len(valid_attendance))
+    high_count = int((valid_attendance >= high_threshold).sum())
+    low_count = int((valid_attendance < low_threshold).sum())
+
+    return {
+        "present": True,
+        "average": round(float(valid_attendance.mean()), 2),
+        "high_threshold": high_threshold,
+        "low_threshold": low_threshold,
+        "high_count": high_count,
+        "low_count": low_count,
+        "high_percentage": round(float(high_count / total_students * 100), 2),
+        "low_percentage": round(float(low_count / total_students * 100), 2),
+    }
+
+
+def build_attendance_support(student_row: pd.Series, class_average: float | None = None) -> dict | None:
+    attendance_value = student_row.get("Attendance")
+    if pd.isna(attendance_value):
+        return None
+
+    attendance = round(float(attendance_value), 2)
+    if attendance >= 90:
+        status = "Excellent"
+        risk = "Low"
+        precautionary_methods = [
+            "Keep the current routine and avoid unnecessary schedule changes.",
+            "Use attendance as a model for other students in the class.",
+            "Continue weekly self-checks to maintain consistency.",
+        ]
+        advice = "Attendance is strong. Maintain current habits and stay consistent."
+    elif attendance >= 75:
+        status = "Moderate"
+        risk = "Medium"
+        precautionary_methods = [
+            "Set a fixed sleep and wake-up routine for school days.",
+            "Plan transport and school preparation the night before.",
+            "Track absences weekly and identify the main cause early.",
+            "Use reminder alarms and teacher follow-ups when attendance drops.",
+        ]
+        advice = "Attendance is acceptable but needs regular monitoring to avoid falling below the safe range."
+    else:
+        status = "Low"
+        risk = "High"
+        precautionary_methods = [
+            "Create a strict daily attendance plan with parent or guardian support.",
+            "Identify the root cause: health, transport, home duties, or motivation.",
+            "Schedule regular teacher check-ins and attendance reviews.",
+            "Use an attendance buddy system or peer reminder system.",
+            "Avoid consecutive absences by intervening immediately after each missed day.",
+        ]
+        advice = "Attendance is below the safe threshold and needs immediate intervention."
+
+    result = {
+        "percentage": attendance,
+        "status": status,
+        "risk_level": risk,
+        "advice": advice,
+        "precautionary_methods": precautionary_methods,
+    }
+    if class_average is not None and not pd.isna(class_average):
+        result["class_average"] = round(float(class_average), 2)
+        result["deviation_from_class"] = round(attendance - float(class_average), 2)
+    return result
 
 
 def format_student_snapshot(row: pd.Series) -> dict:
@@ -45,7 +160,31 @@ def pass_fail(row: pd.Series, subjects: list[str], pass_mark: int = 35) -> str:
 
 def build_rank_dataframe(csv_path: str = "students.csv") -> pd.DataFrame:
     data = pd.read_csv(csv_path)
+    attendance_column = get_attendance_column(data)
+    if attendance_column and attendance_column != "Attendance":
+        data = data.rename(columns={attendance_column: "Attendance"})
+
     subjects = get_subject_columns(data)
+    if not subjects:
+        raise ValueError("CSV must include at least one subject column")
+
+    if "Attendance" in data.columns:
+        data["Attendance"] = pd.to_numeric(data["Attendance"], errors="coerce")
+        if data["Attendance"].isna().any():
+            invalid_students = data.loc[data["Attendance"].isna(), "Name"].head(5).tolist()
+            raise ValueError(
+                f"Invalid attendance values. Check numeric values for: {', '.join(invalid_students)}"
+            )
+
+        out_of_range = (data["Attendance"] < 0) | (data["Attendance"] > 100)
+        if out_of_range.any():
+            invalid_students = data.loc[out_of_range, "Name"].head(5).tolist()
+            raise ValueError(
+                f"Attendance must be between 0 and 100. Check: {', '.join(invalid_students)}"
+            )
+
+        data["Attendance"] = data["Attendance"].round(2)
+
     data["Total"] = data[subjects].sum(axis=1)
     data["Average"] = data["Total"] / len(subjects)
     data["Rank"] = data["Total"].rank(ascending=False, method="min").astype(int)
@@ -66,6 +205,13 @@ def build_rank_dataframe(csv_path: str = "students.csv") -> pd.DataFrame:
         "High",
         np.where(data["Average"] < 65, "Medium", "Low"),
     )
+
+    if "Attendance" in data.columns:
+        data["AttendanceStatus"] = np.where(
+            data["Attendance"] >= 90,
+            "High",
+            np.where(data["Attendance"] < 75, "Low", "Medium"),
+        )
     return data.sort_values(["Rank", "Name"]).reset_index(drop=True)
 
 
@@ -176,6 +322,7 @@ def build_analysis_payload(csv_path: str = "students.csv") -> dict:
     subject_intelligence = build_subject_intelligence(data, subjects)
     score_bands = build_score_bands(data)
     ai_brief = build_ai_brief(data, subject_intelligence)
+    attendance_summary = build_attendance_summary(data)
 
     subject_toppers = {}
     for subject in subjects:
@@ -197,12 +344,17 @@ def build_analysis_payload(csv_path: str = "students.csv") -> dict:
             "student_count": int(len(data)),
             "pass_rate": round(float((data["Result"] == "Pass").mean() * 100), 2),
             "avg_consistency": round(float(data["Consistency"].mean()), 2),
+            "attendance_present": attendance_summary["present"],
+            "average_attendance": attendance_summary["average"],
+            "high_attendance_count": attendance_summary["high_count"],
+            "low_attendance_count": attendance_summary["low_count"],
         },
         "grade_distribution": data["Grade"].value_counts().sort_index().to_dict(),
         "result_distribution": data["Result"].value_counts().to_dict(),
         "subject_toppers": subject_toppers,
         "subject_intelligence": subject_intelligence,
         "score_bands": score_bands,
+        "attendance_summary": attendance_summary,
         "ai_brief": ai_brief,
         "subjects": subjects,
     }
@@ -435,6 +587,7 @@ def get_student_profile(student_name: str, csv_path: str = "students.csv") -> di
     data = build_rank_dataframe(csv_path)
     subjects = get_subject_columns(pd.read_csv(csv_path))
     subject_intelligence = build_subject_intelligence(data, subjects)
+    attendance_column = get_attendance_column(data)
     
     student = data[data["Name"] == student_name]
     if student.empty:
@@ -442,6 +595,7 @@ def get_student_profile(student_name: str, csv_path: str = "students.csv") -> di
     
     student_row = student.iloc[0]
     all_students_avg = data["Average"].mean()
+    attendance_support = build_attendance_support(student_row, float(data["Attendance"].mean()) if "Attendance" in data.columns else None)
     
     # Compile profile
     profile = {
@@ -459,7 +613,8 @@ def get_student_profile(student_name: str, csv_path: str = "students.csv") -> di
             "vs_class_avg": round(student_row["Average"] - all_students_avg, 1),
             "above_median": student_row["Average"] > data["Average"].median(),
             "percentile_rank": round((data["Average"] <= student_row["Average"]).sum() / len(data) * 100, 1)
-        }
+        },
+        "attendance": attendance_support,
     }
     
     return profile
